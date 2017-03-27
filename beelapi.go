@@ -8,8 +8,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -265,6 +267,63 @@ func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
 		return err
 	}
 	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно сохранен на диске"
+	log.Println(msg)
+	return nil
+}
+
+// ConvertWavToMp3Files Конвертирует файлы записей из wav в mp3 формат
+func ConvertWavToMp3Files(r *RecordInfos) error {
+	if r == nil {
+		return nil
+	}
+	length := r.Len()
+	for i := int64(0); i < length; i++ {
+		err := ConvertWavToMp3File(&r.CallInfos[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ConvertWavToMp3File Конвертирует отдельный файл записи из wav в mp3 формат и сохраняет информацию и статус в таблицу БД
+func ConvertWavToMp3File(r *RecordInfo) error {
+	if r.Status == "saved" {
+		return nil
+	}
+	r.SetStatus("saved")
+	r.Provider = Provider
+	todayMp3Folder := "mp3" + string(filepath.Separator) + time.Now().Format("02-01-2006") + string(filepath.Separator)
+	if _, err := os.Stat(todayMp3Folder); os.IsNotExist(err) {
+		err := os.MkdirAll(todayMp3Folder, 0777)
+		if err != nil {
+			return BAPIError{Msg: "Ошибка при создании каталога для хранения mp3 файлов" + err.Error()}
+		}
+	}
+	todayWavFolder := "wav" + string(filepath.Separator) + time.Now().Format("02-01-2006") + string(filepath.Separator)
+	recIdStr := strconv.FormatInt(r.GetId(), 10)
+
+	command := "ffmpeg"
+	a := "-i " + todayWavFolder + recIdStr + ".wav -vn -ar 8000 -ac 1 -ab 16.4k -f mp3 " + todayMp3Folder + recIdStr + ".mp3"
+	args := strings.Fields(a)
+	err := exec.Command(command, args...).Run()
+	if err != nil {
+		remErr := os.Remove(todayWavFolder + recIdStr + ".wav")
+		if remErr != nil {
+			return BAPIError{Msg: "Ошибка при удалении поврежденного wav файла. " + remErr.Error() + " Доп ошибка: " + err.Error()}
+		}
+		return BAPIError{Msg: "Ошибка при конвертировании wav в mp3. " + err.Error()}
+	}
+	file, err := os.Open(todayMp3Folder + recIdStr + ".mp3")
+	if err != nil {
+		return BAPIError{Msg: "Ошибка при открытии mp3 файла для расчета размера. " + err.Error()}
+	}
+	fInfo, err := file.Stat()
+	if err != nil {
+		return BAPIError{Msg: "Ошибка получении размера mp3 файла. " + err.Error()}
+	}
+	r.FileSize = fInfo.Size()
+	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно преобразован в mp3 формат"
 	log.Println(msg)
 	return nil
 }
