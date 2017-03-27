@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dutchcoders/goftp"
 )
 
 var (
@@ -326,4 +329,69 @@ func ConvertWavToMp3File(r *RecordInfo) error {
 	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно преобразован в mp3 формат"
 	log.Println(msg)
 	return nil
+}
+
+// SaveRecordInfoToDB Сохраняет информацию об отдельной в БД, включая статус после конвертирования в mp3
+func SaveRecordInfoToDB(r *RecordInfo, db *sql.DB) error {
+	query := ""
+	fmt.Println(r.Status)
+	query = fmt.Sprintf("INSERT INTO %s (record_id,abonent,phone,call_direction,call_date,duration,file_size,status,provider) VALUES(%d,'%s','%s','%s','%s',%d,%d,'%s','%s')",
+		DBTable, r.RecordId, r.AbonentPhone, r.ClientPhone, r.CallDirection, r.CallDate, r.Duration, r.FileSize, r.Status, r.Provider)
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	return nil
+}
+
+// LoadRecordsOnFTP Отсылает записи в формате mp3 и удаляет локальные копии mp3 и wav файлов
+func LoadRecordOnFTP(r *RecordInfo, mp3Folder string, db *sql.DB, ftp *goftp.FTP) (float32, error) {
+	var length float32 = 0.00
+	if _, err := os.Stat(mp3Folder); os.IsNotExist(err) {
+		return 0, nil
+	}
+	err := filepath.Walk(mp3Folder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		err = ftp.Stor(file.Name(), file)
+		if err != nil {
+			return err
+		}
+		r.Status = "saved"
+		SaveRecordInfoToDB(r, db)
+		log.Println("Файл сохранен на FTP сервере по следующему пути " + file.Name())
+		return nil
+	})
+	if err != nil {
+		return 0, BAPIError{Msg: "Ошибка при переборе mp3 файлов. " + err.Error()}
+	}
+	lenInt := r.FileSize
+	err = os.RemoveAll("wav")
+	if err != nil {
+		return 0, BAPIError{Msg: "Ошибка при удалении  каталога с wav файлами записей. " + err.Error()}
+	}
+	err = os.RemoveAll("mp3")
+	if err != nil {
+		return 0, BAPIError{Msg: "Ошибка при удалении  каталога с mp3 файлами записей. " + err.Error()}
+	}
+	length = (float32(lenInt) / 1024) / 1024
+	return length, nil
+
+}
+
+// isFileAlreadyUploaded Вспомогательная функция проверят, был ли обработан ранее файл записи с ID recordId
+func isFileAlreadyUploaded(recordId int64, db *sql.DB) bool {
+	query := fmt.Sprintf("SELECT status FROM %s WHERE record_id=%d", DBTable, recordId)
+	status := ""
+	row := db.QueryRow(query)
+	row.Scan(&status)
+	return status == "saved"
 }
