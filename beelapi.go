@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -356,20 +357,23 @@ func LoadRecordOnFTP(r *RecordInfo, mp3Folder string, db *sql.DB, ftp *goftp.FTP
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
+		if !info.IsDir() {
+			reg, err := regexp.MatchString(strconv.FormatInt(r.GetId(), 10)+".mp3", info.Name())
+			if err == nil && reg {
+				file, err := os.Open(path)
+				if err != nil {
+					return err
+				}
+				err = ftp.Stor(file.Name(), file)
+				if err != nil {
+					return err
+				}
+				r.Status = "saved"
+				SaveRecordInfoToDB(r, db)
+				log.Println("Файл сохранен на FTP сервере по следующему пути " + file.Name())
+			}
 			return nil
 		}
-		file, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		err = ftp.Stor(file.Name(), file)
-		if err != nil {
-			return err
-		}
-		r.Status = "saved"
-		SaveRecordInfoToDB(r, db)
-		log.Println("Файл сохранен на FTP сервере по следующему пути " + file.Name())
 		return nil
 	})
 	if err != nil {
