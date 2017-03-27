@@ -2,10 +2,13 @@ package beelapi
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/xml"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -205,4 +208,63 @@ func GetRecordsInfoFromServer(r string) (*RecordInfos, error) {
 		log.Printf("На сервере найдено %d записи(ей) разговоров за указанный период...", rs.Count)
 	}
 	return &rs, nil
+}
+
+// GetWavFilesFromServer Получает и сохраняет wav файлы записей с сервера
+func GetWavFilesFromServer(r IRecordsInfoProvider, db *sql.DB) error {
+	if r == nil {
+		return nil
+	}
+	length := r.Len()
+	for i := int64(0); i < length; i++ {
+		err := GetWavFileFromServer(r.GetRecordInfo(i), db)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetWavFileFromServer Получает и сохраняет отдельный wav файл записи с сервера
+func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
+	if isFileAlreadyUploaded(r.GetId(), db) {
+		r.SetStatus("saved")
+		return nil
+	}
+	body := []byte{}
+	recIdStr := strconv.FormatInt(r.GetId(), 10)
+	recordReq, err := http.NewRequest("GET", "https://cloudpbx.beeline.ru/api/pub/client/call/record/file/"+recIdStr, nil)
+	if err != nil {
+		return BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+	}
+	recordReq.Header.Set("Content-Type", "application/xml")
+	recordReq.SetBasicAuth(Username, Passwrd)
+	cl := &http.Client{}
+	resp, err := cl.Do(recordReq)
+	if err != nil {
+		return BAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+	}
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return BAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+	}
+	todayWavFolder := "wav" + string(filepath.Separator) + time.Now().Format("02-01-2006") + string(filepath.Separator)
+	if _, err := os.Stat(todayWavFolder); os.IsNotExist(err) {
+		err = os.MkdirAll(todayWavFolder, 0777)
+		if err != nil {
+			return BAPIError{Msg: "Ошибка при создании каталога для хранения wav файлов" + err.Error()}
+		}
+	}
+	recordFile, err := os.Create(todayWavFolder + recIdStr + ".wav")
+	if err != nil {
+
+		return BAPIError{Msg: "Ошибка при сохранении wav файла из потока" + err.Error()}
+	}
+	_, err = recordFile.Write(body)
+	if err != nil {
+		return err
+	}
+	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно сохранен на диске"
+	log.Println(msg)
+	return nil
 }
