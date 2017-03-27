@@ -27,6 +27,8 @@ var (
 	RecordListUrl string
 	Provider      string
 	DBTable       string
+	FTPUrl        string
+	Ip            string
 )
 
 // Количество файлов, информация о которых возвращается нашей утилите
@@ -37,6 +39,10 @@ type RecordInfos struct {
 	XMLName   xml.Name     `xml:"ListCallRecordResponse"`
 	CallInfos []RecordInfo `xml:"CallRecord"`
 	Count     int          `xml:"totalRecordQuantity"`
+}
+type TimeRange struct {
+	StartStamp time.Time
+	EndStamp   time.Time
 }
 
 // Record структура хранения подробной информации об отдельной записи
@@ -153,17 +159,15 @@ var StartDate time.Time
 
 // BuildXMLRequest Подготавливает тело запроса на получение информации о записях на сервере Билайн
 // dir - аргумент типа звонков(входящие или исхордящие)
-func BuildXMLRequest(dir string) string {
+func BuildXMLRequest(dir string, t TimeRange) string {
 	PageSize = 200
-	EndDate = time.Now()
-	StartDate = time.Now().Add(-time.Duration(PeriodInHours) * 60 * time.Minute)
 	return `<?xml version="1.0" encoding="utf-8"?>
 	<tns:ListCallRecordRequest xmlns:tns="http://client.pub.api.cloudpbx.beeline.ru">
 	<pageNumber>0</pageNumber>
 	<pageSize>` + strconv.Itoa(PageSize) + `</pageSize>
 	<direction>` + dir + `</direction>
-	<dateFrom>` + StartDate.Format(time.RFC3339) + `</dateFrom>
-	<dateTo>` + EndDate.Format(time.RFC3339) + `</dateTo>
+	<dateFrom>` + t.StartStamp.Format(time.RFC3339) + `</dateFrom>
+	<dateTo>` + t.EndStamp.Format(time.RFC3339) + `</dateTo>
 	<sort>
 	<direction>ASC</direction>
 	<field>Date</field>
@@ -236,6 +240,7 @@ func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
 		r.SetStatus("saved")
 		return nil
 	}
+	r.SetStatus("failed")
 	body := []byte{}
 	recIdStr := strconv.FormatInt(r.GetId(), 10)
 	recordReq, err := http.NewRequest("GET", "https://cloudpbx.beeline.ru/api/pub/client/call/record/file/"+recIdStr, nil)
@@ -275,13 +280,13 @@ func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
 }
 
 // ConvertWavToMp3Files Конвертирует файлы записей из wav в mp3 формат
-func ConvertWavToMp3Files(r *RecordInfos) error {
+func ConvertWavToMp3Files(r *RecordInfos, todayWavFolder string, todayMp3Folder string) error {
 	if r == nil {
 		return nil
 	}
 	length := r.Len()
 	for i := int64(0); i < length; i++ {
-		err := ConvertWavToMp3File(&r.CallInfos[i])
+		err := ConvertWavToMp3File(&r.CallInfos[i], todayWavFolder, todayMp3Folder)
 		if err != nil {
 			return err
 		}
@@ -290,20 +295,17 @@ func ConvertWavToMp3Files(r *RecordInfos) error {
 }
 
 // ConvertWavToMp3File Конвертирует отдельный файл записи из wav в mp3 формат и сохраняет информацию и статус в таблицу БД
-func ConvertWavToMp3File(r *RecordInfo) error {
+func ConvertWavToMp3File(r *RecordInfo, todayWavFolder string, todayMp3Folder string) error {
 	if r.Status == "saved" {
 		return nil
 	}
-	r.SetStatus("saved")
 	r.Provider = Provider
-	todayMp3Folder := "mp3" + string(filepath.Separator) + time.Now().Format("02-01-2006") + string(filepath.Separator)
 	if _, err := os.Stat(todayMp3Folder); os.IsNotExist(err) {
 		err := os.MkdirAll(todayMp3Folder, 0777)
 		if err != nil {
 			return BAPIError{Msg: "Ошибка при создании каталога для хранения mp3 файлов" + err.Error()}
 		}
 	}
-	todayWavFolder := "wav" + string(filepath.Separator) + time.Now().Format("02-01-2006") + string(filepath.Separator)
 	recIdStr := strconv.FormatInt(r.GetId(), 10)
 
 	command := "ffmpeg"
