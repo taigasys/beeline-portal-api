@@ -19,16 +19,17 @@ import (
 )
 
 var (
-	Username      string
-	Passwrd       string
-	PeriodInHours int
-	FtpLogin      string
-	FtpPsw        string
-	RecordListUrl string
-	Provider      string
-	DBTable       string
-	FTPUrl        string
-	Ip            string
+	Username       string
+	Passwrd        string
+	PeriodInHours  int
+	FtpLogin       string
+	FtpPsw         string
+	RecordListUrl  string
+	RecordLFileUrl string
+	Provider       string
+	DBTable        string
+	FTPUrl         string
+	Ip             string
 )
 
 // Количество файлов, информация о которых возвращается нашей утилите
@@ -235,7 +236,7 @@ func GetWavFilesFromServer(r IRecordsInfoProvider, db *sql.DB) error {
 }
 
 // GetWavFileFromServer Получает и сохраняет отдельный wav файл записи с сервера
-func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
+func GetWavFileFromServer(r IRecordInfoProvider, todayWavFolder string, db *sql.DB) error {
 	if isFileAlreadyUploaded(r.GetId(), db) {
 		r.SetStatus("saved")
 		return nil
@@ -243,7 +244,7 @@ func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
 	r.SetStatus("failed")
 	body := []byte{}
 	recIdStr := strconv.FormatInt(r.GetId(), 10)
-	recordReq, err := http.NewRequest("GET", "https://cloudpbx.beeline.ru/api/pub/client/call/record/file/"+recIdStr, nil)
+	recordReq, err := http.NewRequest("GET", RecordLFileUrl+recIdStr, nil)
 	if err != nil {
 		return BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
@@ -258,7 +259,6 @@ func GetWavFileFromServer(r IRecordInfoProvider, db *sql.DB) error {
 	if err != nil {
 		return BAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
-	todayWavFolder := "wav" + string(filepath.Separator) + time.Now().Format("02-01-2006") + string(filepath.Separator)
 	if _, err := os.Stat(todayWavFolder); os.IsNotExist(err) {
 		err = os.MkdirAll(todayWavFolder, 0777)
 		if err != nil {
