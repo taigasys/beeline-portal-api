@@ -19,7 +19,8 @@ import (
 func init() {
 	PeriodInHours = 4
 	RecordListUrl = "https://cloudpbx.beeline.ru/api/pub/client/call/record/list"
-	DBTable = "beeline_files"
+	RecordFileUrl = "https://cloudpbx.beeline.ru/api/pub/client/call/record/list"
+	DBTable = "call_record"
 }
 
 // TestGetClientsFromDB Тест на выборку данных

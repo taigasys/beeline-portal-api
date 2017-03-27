@@ -20,17 +20,17 @@ import (
 )
 
 var (
-	Username       string
-	Passwrd        string
-	PeriodInHours  int
-	FtpLogin       string
-	FtpPsw         string
-	RecordListUrl  string
-	RecordLFileUrl string
-	Provider       string
-	DBTable        string
-	FTPUrl         string
-	Ip             string
+	Username      string
+	Passwrd       string
+	PeriodInHours int
+	FtpLogin      string
+	FtpPsw        string
+	RecordListUrl string
+	RecordFileUrl string
+	Provider      string
+	DBTable       string
+	FTPUrl        string
+	Ip            string
 )
 
 // Количество файлов, информация о которых возвращается нашей утилите
@@ -245,7 +245,7 @@ func GetWavFileFromServer(r IRecordInfoProvider, todayWavFolder string, db *sql.
 	r.SetStatus("failed")
 	body := []byte{}
 	recIdStr := strconv.FormatInt(r.GetId(), 10)
-	recordReq, err := http.NewRequest("GET", RecordLFileUrl+recIdStr, nil)
+	recordReq, err := http.NewRequest("GET", RecordFileUrl+recIdStr, nil)
 	if err != nil {
 		return false, BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
@@ -337,7 +337,6 @@ func ConvertWavToMp3File(r *RecordInfo, todayWavFolder string, todayMp3Folder st
 // SaveRecordInfoToDB Сохраняет информацию об отдельной в БД, включая статус после конвертирования в mp3
 func SaveRecordInfoToDB(r *RecordInfo, db *sql.DB) error {
 	query := ""
-	fmt.Println(r.Status)
 	query = fmt.Sprintf("INSERT INTO %s (record_id,abonent,phone,call_direction,call_date,duration,file_size,status,provider) VALUES(%d,'%s','%s','%s','%s',%d,%d,'%s','%s')",
 		DBTable, r.RecordId, r.AbonentPhone, r.ClientPhone, r.CallDirection, r.CallDate.Format(time.RFC3339), r.Duration, r.FileSize, r.Status, r.Provider)
 	_, err := db.Exec(query)
