@@ -339,7 +339,6 @@ func LoadRecordOnFTP(r *RecordInfo, mp3Folder string, db *sql.DB, ftp *goftp.FTP
 	lenInt := r.FileSize
 	length = (float32(lenInt) / 1024) / 1024
 	return length, nil
-
 }
 
 // isFileAlreadyUploaded Вспомогательная функция проверят, был ли обработан ранее файл записи с ID recordId
