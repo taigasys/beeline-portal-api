@@ -19,7 +19,7 @@ import (
 func init() {
 	PeriodInHours = 4
 	RecordListUrl = "https://cloudpbx.beeline.ru/api/pub/client/call/record/list"
-	RecordFileUrl = "https://cloudpbx.beeline.ru/api/pub/client/call/record/list"
+	RecordFileUrl = "https://cloudpbx.beeline.ru/api/pub/client/call/record/file/"
 	DBTable = "call_record"
 }
 

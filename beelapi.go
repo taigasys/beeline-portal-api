@@ -42,6 +42,8 @@ type RecordInfos struct {
 	CallInfos []RecordInfo `xml:"CallRecord"`
 	Count     int          `xml:"totalRecordQuantity"`
 }
+
+// TimeRange структура хранения начальной и конечной дат, за которые запрашиваются записи разговоров
 type TimeRange struct {
 	StartStamp time.Time
 	EndStamp   time.Time
@@ -66,19 +68,6 @@ type RecordInfo struct {
 // GetRecord метод возвращает ифно об записей по индексу
 func (r *RecordInfos) GetRecord(i int64) *RecordInfo {
 	return &r.CallInfos[i]
-}
-
-// RecordInfos структура для хранения краткой информации о записях, необхадима для отправки запросо на получение файлов
-type ShortRecordInfos struct {
-	ShortCallInfos []ShortRecordInfo
-	Count          int
-}
-
-// RecordInfo структура для хранения краткой информации об отдельной записи
-type ShortRecordInfo struct {
-	RecordId int64
-	Status   string
-	SaveDate time.Time
 }
 
 // IRecordsInfoProvider интерфейс для отправки запросов на получение файлов разговоров
@@ -119,31 +108,6 @@ func (r *RecordInfo) SetStatus(s string) {
 	r.Status = s
 }
 
-// GetId метод возвращает ID записи разговора
-func (ri *ShortRecordInfo) GetId() int64 {
-	return ri.RecordId
-}
-
-// GetStatus метод возвращает статус хранения записи разговора
-func (ri *ShortRecordInfo) GetStatus() string {
-	return ri.Status
-}
-
-// SetStatus метод устанавливает статус хранения записи разговора
-func (ri *ShortRecordInfo) SetStatus(s string) {
-	ri.Status = s
-}
-
-// Len  метод расситывает количество записей
-func (ri *ShortRecordInfos) Len() int64 {
-	return int64(len(ri.ShortCallInfos))
-}
-
-// GetRecordInfo метод возвращает инфо об отдельной записи, в данном случае - краткую
-func (ri *ShortRecordInfos) GetRecordInfo(index int64) IRecordInfoProvider {
-	return &ri.ShortCallInfos[index]
-}
-
 //BAPIError Тип хранения ошибок
 type BAPIError struct {
 	Msg string
@@ -152,12 +116,6 @@ type BAPIError struct {
 func (d BAPIError) Error() string {
 	return d.Msg
 }
-
-// Текущая дата
-var EndDate time.Time
-
-// Дата, с которой получаем записи
-var StartDate time.Time
 
 // BuildXMLRequest Подготавливает тело запроса на получение информации о записях на сервере Билайн
 // dir - аргумент типа звонков(входящие или исхордящие)
