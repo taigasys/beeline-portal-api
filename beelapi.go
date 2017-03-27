@@ -1,7 +1,12 @@
 package beelapi
 
 import (
+	"bytes"
 	"encoding/xml"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -130,4 +135,74 @@ type BAPIError struct {
 
 func (d BAPIError) Error() string {
 	return d.Msg
+}
+
+// Текущая дата
+var EndDate time.Time
+
+// Дата, с которой получаем записи
+var StartDate time.Time
+
+// BuildXMLRequest Подготавливает тело запроса на получение информации о записях на сервере Билайн
+// dir - аргумент типа звонков(входящие или исхордящие)
+func BuildXMLRequest(dir string) string {
+	PageSize = 200
+	EndDate = time.Now()
+	StartDate = time.Now().Add(-time.Duration(PeriodInHours) * 60 * time.Minute)
+	return `<?xml version="1.0" encoding="utf-8"?>
+	<tns:ListCallRecordRequest xmlns:tns="http://client.pub.api.cloudpbx.beeline.ru">
+	<pageNumber>0</pageNumber>
+	<pageSize>` + strconv.Itoa(PageSize) + `</pageSize>
+	<direction>` + dir + `</direction>
+	<dateFrom>` + StartDate.Format(time.RFC3339) + `</dateFrom>
+	<dateTo>` + EndDate.Format(time.RFC3339) + `</dateTo>
+	<sort>
+	<direction>ASC</direction>
+	<field>Date</field>
+	</sort>
+	</tns:ListCallRecordRequest>`
+}
+
+// GetRecordsInfoFromServer Получает информацию о количестве записей на сервере Билайн за данных период
+func GetRecordsInfoFromServer(r string) (*RecordInfos, error) {
+
+	reqBody := bytes.NewBufferString(r)
+	req, err := http.NewRequest("PUT", RecordListUrl, reqBody)
+	if err != nil {
+		return nil, BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение информации о файлах:" + err.Error()}
+	}
+
+	req.Header.Set("Content-Type", "application/xml")
+	req.SetBasicAuth(Username, Passwrd)
+	cl := &http.Client{}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return nil, BAPIError{Msg: "Возникла ошибка при отправке запроса: " + err.Error()}
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, BAPIError{Msg: "Возникла ошибка! Получен ответ от сервера: " + resp.Status + " Код ответа: " + strconv.Itoa(resp.StatusCode)}
+	}
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, BAPIError{Msg: "Ошибка при обработке ответа от сервера: " + err.Error()}
+	}
+	body := bytes.NewBufferString(string(bodyBytes))
+	var rs RecordInfos
+	xmlBytes, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, BAPIError{Msg: "Ошибка при обработке ответа от сервера: " + err.Error()}
+	}
+	err = xml.Unmarshal(xmlBytes, &rs)
+	if err != nil {
+		return nil, BAPIError{Msg: "Ошибка при обработке ответа от сервера: " + err.Error()}
+	}
+	if rs.Count == 0 {
+		log.Println("На сервере не найдено записей разговоров за указанный период. Программа завершила работу")
+		return nil, nil
+	} else {
+		log.Printf("На сервере найдено %d записи(ей) разговоров за указанный период...", rs.Count)
+	}
+	return &rs, nil
 }
