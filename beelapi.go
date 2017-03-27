@@ -221,13 +221,13 @@ func GetRecordsInfoFromServer(r string) (*RecordInfos, error) {
 }
 
 // GetWavFilesFromServer Получает и сохраняет wav файлы записей с сервера
-func GetWavFilesFromServer(r IRecordsInfoProvider, db *sql.DB) error {
+func GetWavFilesFromServer(r IRecordsInfoProvider, todayWavFolder string, db *sql.DB) error {
 	if r == nil {
 		return nil
 	}
 	length := r.Len()
 	for i := int64(0); i < length; i++ {
-		err := GetWavFileFromServer(r.GetRecordInfo(i), db)
+		_, err := GetWavFileFromServer(r.GetRecordInfo(i), todayWavFolder, db)
 		if err != nil {
 			return err
 		}
@@ -236,47 +236,47 @@ func GetWavFilesFromServer(r IRecordsInfoProvider, db *sql.DB) error {
 }
 
 // GetWavFileFromServer Получает и сохраняет отдельный wav файл записи с сервера
-func GetWavFileFromServer(r IRecordInfoProvider, todayWavFolder string, db *sql.DB) error {
+func GetWavFileFromServer(r IRecordInfoProvider, todayWavFolder string, db *sql.DB) (bool, error) {
 	if isFileAlreadyUploaded(r.GetId(), db) {
 		r.SetStatus("saved")
-		return nil
+		return true, nil
 	}
 	r.SetStatus("failed")
 	body := []byte{}
 	recIdStr := strconv.FormatInt(r.GetId(), 10)
 	recordReq, err := http.NewRequest("GET", RecordLFileUrl+recIdStr, nil)
 	if err != nil {
-		return BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return false, BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
 	recordReq.Header.Set("Content-Type", "application/xml")
 	recordReq.SetBasicAuth(Username, Passwrd)
 	cl := &http.Client{}
 	resp, err := cl.Do(recordReq)
 	if err != nil {
-		return BAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return false, BAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return BAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return false, BAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
 	if _, err := os.Stat(todayWavFolder); os.IsNotExist(err) {
 		err = os.MkdirAll(todayWavFolder, 0777)
 		if err != nil {
-			return BAPIError{Msg: "Ошибка при создании каталога для хранения wav файлов" + err.Error()}
+			return false, BAPIError{Msg: "Ошибка при создании каталога для хранения wav файлов" + err.Error()}
 		}
 	}
 	recordFile, err := os.Create(todayWavFolder + recIdStr + ".wav")
 	if err != nil {
 
-		return BAPIError{Msg: "Ошибка при сохранении wav файла из потока" + err.Error()}
+		return false, BAPIError{Msg: "Ошибка при сохранении wav файла из потока" + err.Error()}
 	}
 	_, err = recordFile.Write(body)
 	if err != nil {
-		return err
+		return false, err
 	}
 	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно сохранен на диске"
 	log.Println(msg)
-	return nil
+	return false, nil
 }
 
 // ConvertWavToMp3Files Конвертирует файлы записей из wav в mp3 формат
@@ -309,7 +309,7 @@ func ConvertWavToMp3File(r *RecordInfo, todayWavFolder string, todayMp3Folder st
 	recIdStr := strconv.FormatInt(r.GetId(), 10)
 
 	command := "ffmpeg"
-	a := "-i " + todayWavFolder + recIdStr + ".wav -vn -ar 8000 -ac 1 -ab 16.4k -f mp3 " + todayMp3Folder + recIdStr + ".mp3"
+	a := "-y -i " + todayWavFolder + recIdStr + ".wav -vn -ar 8000 -ac 1 -ab 16.4k -f mp3 " + todayMp3Folder + recIdStr + ".mp3"
 	args := strings.Fields(a)
 	err := exec.Command(command, args...).Run()
 	if err != nil {
@@ -338,7 +338,7 @@ func SaveRecordInfoToDB(r *RecordInfo, db *sql.DB) error {
 	query := ""
 	fmt.Println(r.Status)
 	query = fmt.Sprintf("INSERT INTO %s (record_id,abonent,phone,call_direction,call_date,duration,file_size,status,provider) VALUES(%d,'%s','%s','%s','%s',%d,%d,'%s','%s')",
-		DBTable, r.RecordId, r.AbonentPhone, r.ClientPhone, r.CallDirection, r.CallDate, r.Duration, r.FileSize, r.Status, r.Provider)
+		DBTable, r.RecordId, r.AbonentPhone, r.ClientPhone, r.CallDirection, r.CallDate.Format(time.RFC3339), r.Duration, r.FileSize, r.Status, r.Provider)
 	_, err := db.Exec(query)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -346,7 +346,7 @@ func SaveRecordInfoToDB(r *RecordInfo, db *sql.DB) error {
 	return nil
 }
 
-// LoadRecordsOnFTP Отсылает записи в формате mp3 и удаляет локальные копии mp3 и wav файлов
+// LoadRecordsOnFTP Отсылает запись в формате mp3 и удаляет локальную копии mp3 и wav файлов
 func LoadRecordOnFTP(r *RecordInfo, mp3Folder string, db *sql.DB, ftp *goftp.FTP) (float32, error) {
 	var length float32 = 0.00
 	if _, err := os.Stat(mp3Folder); os.IsNotExist(err) {
@@ -376,14 +376,6 @@ func LoadRecordOnFTP(r *RecordInfo, mp3Folder string, db *sql.DB, ftp *goftp.FTP
 		return 0, BAPIError{Msg: "Ошибка при переборе mp3 файлов. " + err.Error()}
 	}
 	lenInt := r.FileSize
-	err = os.RemoveAll("wav")
-	if err != nil {
-		return 0, BAPIError{Msg: "Ошибка при удалении  каталога с wav файлами записей. " + err.Error()}
-	}
-	err = os.RemoveAll("mp3")
-	if err != nil {
-		return 0, BAPIError{Msg: "Ошибка при удалении  каталога с mp3 файлами записей. " + err.Error()}
-	}
 	length = (float32(lenInt) / 1024) / 1024
 	return length, nil
 
