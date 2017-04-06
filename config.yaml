@@ -1,0 +1,10 @@
+period_in_hours: 10
+provider: Beeline
+# Настройки локального сервера
+db_host: example
+db_table: example
+db_name: example
+db_user: example
+db_psw: example
+record_list_url: https://cloudpbx.beeline.ru/api/pub/client/call/record/list/
+record_file_url: https://cloudpbx.beeline.ru/api/pub/client/call/record/file/
