@@ -14,20 +14,29 @@ const (
 	OFF
 )
 
+//BeeAPIError Тип хранения ошибок
+type BeeAPIError struct {
+	Msg string
+}
+
+func (d BeeAPIError) Error() string {
+	return d.Msg
+}
+
 // Abonent структура для хранения информации об абоненте
 type Abonent struct {
-	UserId     string `json:""`
-	Phone      string `json:""`
-	FirstName  string `json:""`
-	LastName   string `json:""`
-	Email      string `json:""`
-	Department string `json:""`
-	Extension  string `json:""`
+	UserId     string `json:"userId"`
+	Phone      string `json:"phone"`
+	FirstName  string `json:"firstName"`
+	LastName   string `json:"lastName"`
+	Email      string `json:"email"`
+	Department string `json:"department"`
+	Extension  string `json:"extension"`
 }
 
 // Abonents структура для хранения информации об абоненте
 type Abonents struct {
-	Abnts []Abonent `json:""`
+	Abnts []Abonent
 }
 
 // CfsStatusResponse
@@ -55,80 +64,98 @@ type CfsRuleUpdate struct {
 
 // BasicRedirect Номера для переадресации
 type BasicRedirect struct {
-	ForwardAllCallsPhone    string `json:""`
-	ForwardBusyPhone        string `json:""`
-	ForwardUnavailablePhone string `json:""`
-	ForwardNotAnswerPhone   string `json:""` //Номер, на который будет выполнена переадресация если номер не отвечает
-	ForwardNotAnswerTimeout int    `json:""` //Колличество гудков, которые необходимо подождать для ответа номера
+	ForwardAllCallsPhone    string `json:"forwardAllCallsPhone"`
+	ForwardBusyPhone        string `json:"forwardBusyPhone"`
+	ForwardUnavailablePhone string `json:"forwardUnavailablePhone"`
+	ForwardNotAnswerPhone   string `json:"forwardNotAnswerPhone"`   //Номер, на который будет выполнена переадресация если номер не отвечает
+	ForwardNotAnswerTimeout int    `json:"forwardNotAnswerTimeout"` //Колличество гудков, которые необходимо подождать для ответа номера
 }
 
-// BRResponse Возвращаемое значение:
-type BRResponse struct {
-	Status  int           `json:""` // Статус переадресации = [ON (Переадресация включена), OFF (Переадресация выключена)]
-	Forward BasicRedirect `json:""` // Номера для переадресации
+// BasicRedirectResponse Возвращаемое значение:
+type BasicRedirectResponse struct {
+	Status  int           `json:"status"`  // Статус переадресации = [ON (Переадресация включена), OFF (Переадресация выключена)]
+	Forward BasicRedirect `json:"forward"` // Номера для переадресации
 }
 
 // BwlStatusResponse
 type BwlStatusResponse struct {
-	Status    int       `json:""` // [BLACK_LIST_ON (Не принимать звонки с указанных в списке правил номеров), WHITE_LIST_ON (Принимать звонки только с указанных в списке правил номеров), OFF (Услуга отключена)]
-	BlackList []BwlRule `json:""`
-	WhiteList []BwlRule `json:""`
+	Status    int       `json:"status"` // [BLACK_LIST_ON (Не принимать звонки с указанных в списке правил номеров), WHITE_LIST_ON (Принимать звонки только с указанных в списке правил номеров), OFF (Услуга отключена)]
+	BlackList []BwlRule `json:"blackList"`
+	WhiteList []BwlRule `json:"whiteList"`
 }
 
 // BwlRule
 type BwlRule struct {
-	Id        int      `json:""`
-	Name      string   `json:""`
-	Schedule  int      `json:""` // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
-	PhoneList []string `json:""`
+	Id        int      `json:"id"`
+	Name      string   `json:"name"`
+	Schedule  int      `json:"schedule"` // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
+	PhoneList []string `json:"phoneList"`
 }
 
 // BwlRuleAdd
 type BwlRuleAdd struct {
-	Type int           `json:""` // [BLACK_LIST (Не принимать звонки с указанных в списке правил номеров), WHITE_LIST (Принимать звонки только с указанных в списке правил номеров)]
-	Rule BwlRuleUpdate `json:""`
+	Type int           `json:"type"` // [BLACK_LIST (Не принимать звонки с указанных в списке правил номеров), WHITE_LIST (Принимать звонки только с указанных в списке правил номеров)]
+	Rule BwlRuleUpdate `json:"rule"`
 }
 
 // BwlRuleUpdate Запрос для обновления правила
 type BwlRuleUpdate struct {
-	Name      string   `json:""`
-	Schedule  int      `json:""` // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
-	PhoneList []string `json:""`
+	Name      string   `json:"name"`
+	Schedule  int      `json:"schedule"` // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
+	PhoneList []string `json:"phoneList"`
 }
 type NumberInfo struct {
-	NumberId string `json:""` // Идентификатор входящего номера
-	Phone    string `json:""` //Номер телефона
+	NumberId string `json:"numberId"` // Идентификатор входящего номера
+	Phone    string `json:"phone"`    //Номер телефона
 }
 type SubscriptionRequest struct {
-	Pattern          string `json:""` //Идентификатор, входящий или добавочный номер абонента или номера
-	Expires          int    `json:""` //Длительность подписки
-	SubscriptionType int    `json:""` // Тип подписки = [BASIC_CALL (Базовая информация о вызове), ADVANCED_CALL (Расширеная информация о вызове)]
-	Url              string `json:""`
+	Pattern          string `json:"pattern"`          //Идентификатор, входящий или добавочный номер абонента или номера
+	Expires          int    `json:"expires"`          //Длительность подписки
+	SubscriptionType int    `json:"subscriptionType"` // Тип подписки = [BASIC_CALL (Базовая информация о вызове), ADVANCED_CALL (Расширеная информация о вызове)]
+	Url              string `json:"url"`
 }
 type SubscriptionResult struct {
-	SubscriptionId string `json:""` //Идентификатор подписки
-	Expires        int    `json:""` //Длительность подписки
+	SubscriptionId string `json:"subscriptionId"` //Идентификатор подписки
+	Expires        int    `json:"expires"`        //Длительность подписки
 }
 type SubscriptionInfo struct {
-	SubscriptionId   string `json:""` //Идентификатор подписки
-	TargetType       int    `json:""` //Тип объекта, для которого сформирована подписка = [GROUP (События всей группы), ABONENT (События абонента), NUMBER (События номера)]
-	TargetId         string `json:""` //Идентификатор объекта, для которого сформирована подписка
-	SubscriptionType int    `json:""` //Тип подписки = [BASIC_CALL (Базовая информация о вызове), ADVANCED_CALL (Расширеная информация о вызове)]
-	Expires          int    `json:""` //Длительность подписки
-	Url              string `json:""` //URL приложения
+	SubscriptionId   string `json:"subscriptionId"`   //Идентификатор подписки
+	TargetType       int    `json:"targetType"`       //Тип объекта, для которого сформирована подписка = [GROUP (События всей группы), ABONENT (События абонента), NUMBER (События номера)]
+	TargetId         string `json:"targetId"`         //Идентификатор объекта, для которого сформирована подписка
+	SubscriptionType int    `json:"subscriptionType"` //Тип подписки = [BASIC_CALL (Базовая информация о вызове), ADVANCED_CALL (Расширеная информация о вызове)]
+	Expires          int    `json:"expires "`         //Длительность подписки
+	Url              string `json:"url"`              //URL приложения
+}
+type IcrNumbersResult struct {
+	PhoneNumber string            `json:"phoneNumber"` //Номер телефона
+	Status      int               `json:"status"`      //Результат выполнения операции = [SUCCESS (Успешно), FAULT (Ошибка)]
+	Error       IcrOperationError `json:"error"`       //Описание ошибки
+}
+type IcrOperationError struct {
+	ErrorCode   string `json:"errorCode"`   //Код ошибки
+	Description string `json:"description"` //Сообщение об ошибке
+}
+type IcrRouteRule struct {
+	InboundNumber string `json:"inboundNumber"` //Входящий номер клиента
+	Extension     string `json:"extension"`     //Внутренний номер
+}
+type IcrRouteResult struct {
+	Rule   IcrRouteRule      `json:"rule"`   //Правило переадресации
+	Status int               `json:"status"` //Результат выполнения операции = [SUCCESS (Успешно), FAULT (Ошибка)]
+	Error  IcrOperationError `json:"error"`  //Описание ошибки
 }
 
 // CallRecord структура хранения подробной информации об отдельной записи
 type CallRecord struct {
-	Id         string    //Идентификатор записи
-	ExternalId string    //Внешний идентификатор записи
-	Phone      string    //Мобильный номер абонента
-	Direction  int       //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
-	Date       time.Time //Дата и время разговора
-	Duration   int       //Длительность разговора в миллисекундах
-	FileSize   int       //Размер файла записи разговора
-	Comment    string    //Комментарий к записи разговора
-	Abonent    Abonent   //Абонент
+	Id         string    `json:"id"`         //Идентификатор записи
+	ExternalId string    `json:"externalId"` //Внешний идентификатор записи
+	Phone      string    `json:"phone"`      //Мобильный номер абонента
+	Direction  int       `json:"direction"`  //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
+	Date       time.Time `json:"date"`       //Дата и время разговора
+	Duration   int       `json:"duration"`   //Длительность разговора в миллисекундах
+	FileSize   int       `json:"fileSize"`   //Размер файла записи разговора
+	Comment    string    `json:"comment"`    //Комментарий к записи разговора
+	Abonent    Abonent   `json:"abonent"`    //Абонент
 }
 
 // APIClient структура для хранения информации об абоненте
@@ -148,15 +175,6 @@ type TimeRange struct {
 }
 
 var cfg APIClientSettings
-
-//BeeAPIError Тип хранения ошибок
-type BeeAPIError struct {
-	Msg string
-}
-
-func (d BeeAPIError) Error() string {
-	return d.Msg
-}
 
 //  ------------------------------------- Операции с абонентами -------------------------------------
 //  ------------------------------------- Простая переадресация вызовов -------------------------------------
@@ -411,5 +429,48 @@ func GetXSIEventSubscriptionInfo(id string) (SubscriptionInfo, error) {
 // id - Идентификатор отключаемой подписки
 
 func TurnOffXSIEventSubscription(id string) error {
+
+}
+
+//  ------------------------------------- Индивидуальная переадресация  -------------------------------------
+
+// GetIncNumWithRedirect Возвращает список входящих номеров, для которых включена переадресация
+
+func GetIncNumWithRedirect() ([]NumberInfo, error) {
+
+}
+
+// TurnOnCustomIncNumRedirect Включает индивидуальную переадресацию для входящих номеров
+//  numberList - Список входящих номеров, для которых должна быть включена переадресация
+func TurnOnCustomIncNumRedirect(numberList []string) ([]IcrNumbersResult, error) {
+
+}
+
+// TurnOffCustomIncNumRedirect Отключает индивидуальную переадресацию для входящих номеров
+//  numberList - Список входящих номеров, для которых должна быть отключена переадресация
+func TurnOffCustomIncNumRedirect(numberList []string) ([]IcrNumbersResult, error) {
+
+}
+
+// GetRedirectRulesList Возвращает список правил переадресации
+func GetRedirectRulesList() ([]IcrRouteRule, error) {
+
+}
+
+// DeleteRedirectRulesList Удаляет список правил переадресации
+// rules - Список правил переадресации
+func DeleteRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
+
+}
+
+// ReplaceRedirectRulesList Замещает правила переадресации
+// rules - Список правил переадресации
+func ReplaceRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
+
+}
+
+// UnionRedirectRulesList Объединяет существующие правила переадресации с переданным списком правил.
+// rules - Список правил переадресации
+func UnionRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
 
 }
