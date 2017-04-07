@@ -1,17 +1,22 @@
 package beelapi
 
-import "time"
+import (
+	"io/ioutil"
+	"net/http"
+	"regexp"
+	"time"
+)
 
 const (
 	// Статусы агента call-центра
-	ONLINE = iota
-	OFFLINE
-	BREAK
+	ONLINE  = 0
+	OFFLINE = 1
+	BREAK   = 2
 	// CONTENTTYPE Тип ответа
 	CONTENTTYPE string = "application/json"
 	// Статус записи разговоров для абонента
-	ON
-	OFF
+	OFF = 0
+	ON  = 1
 )
 
 //BeeAPIError Тип хранения ошибок
@@ -160,8 +165,7 @@ type CallRecord struct {
 
 // APIClient структура для хранения информации об абоненте
 type APIClientSettings struct {
-	Username      string
-	Pwd           string
+	Token         string
 	PeriodInHours int
 	RecordListUrl string
 	RecordFileUrl string
@@ -177,6 +181,7 @@ type TimeRange struct {
 var cfg APIClientSettings
 
 //  ------------------------------------- Операции с абонентами -------------------------------------
+
 //  ------------------------------------- Простая переадресация вызовов -------------------------------------
 // GetAbonent Возвращает список всех абонентов
 func GetAbonents() Abonents {
@@ -472,5 +477,36 @@ func ReplaceRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
 // UnionRedirectRulesList Объединяет существующие правила переадресации с переданным списком правил.
 // rules - Список правил переадресации
 func UnionRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
+
+}
+
+func createRequest(reqType string, url string, body string) {
+	recordReq, err := http.NewRequest(reqType, url, nil)
+	if err != nil {
+		return false, BeeAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+	}
+	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", APIClientSettings.Token)
+	q := recordReq.URL.Query
+	for i := 0; i < len(params); i++ {
+		q.add()
+	}
+	cl := &http.Client{}
+	resp, err := cl.Do(recordReq)
+	if err != nil {
+		return false, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+	}
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+	}
+}
+func createUrlWithQuery(url string, params []string) string {
+	r := http.NewRequest
+	q := r.URL.Query
+	var re = regexp.MustCompile(`{(\S*)}`)
+	s := re.ReplaceAllString(url, `$1.$2`)
+	for i := 0; i < len(params); i++ {
+
+	}
 
 }
