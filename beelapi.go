@@ -1,46 +1,144 @@
 package beelapi
 
-import (
-	"bytes"
-	"database/sql"
-	"encoding/xml"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
+import "time"
 
-	"github.com/dutchcoders/goftp"
+const (
+	// Статусы агента call-центра
+	ONLINE = iota
+	OFFLINE
+	BREAK
+	// CONTENTTYPE Тип ответа
+	CONTENTTYPE string = "application/json"
+	// Статус записи разговоров для абонента
+	ON
+	OFF
 )
 
-var (
+// Abonent структура для хранения информации об абоненте
+type Abonent struct {
+	UserId     string `json:""`
+	Phone      string `json:""`
+	FirstName  string `json:""`
+	LastName   string `json:""`
+	Email      string `json:""`
+	Department string `json:""`
+	Extension  string `json:""`
+}
+
+// Abonents структура для хранения информации об абоненте
+type Abonents struct {
+	Abnts []Abonent `json:""`
+}
+
+// CfsStatusResponse
+type CfsStatusResponse struct {
+	IsCfsServiceEnabled bool
+	RuleList            []CfsRule
+}
+
+// CfsRule
+type CfsRule struct {
+	Id             int      `json:""`
+	Name           string   `json:""`
+	ForwardToPhone string   `json:""`
+	Schedule       int      `json:""` //[ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
+	PhoneList      []string `json:""`
+}
+
+// CfsRuleUpdate Запрос для добавления правила
+type CfsRuleUpdate struct {
+	Name           string
+	ForwardToPhone string
+	Schedule       int // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
+	PhoneList      []string
+}
+
+// BasicRedirect Номера для переадресации
+type BasicRedirect struct {
+	ForwardAllCallsPhone    string `json:""`
+	ForwardBusyPhone        string `json:""`
+	ForwardUnavailablePhone string `json:""`
+	ForwardNotAnswerPhone   string `json:""` //Номер, на который будет выполнена переадресация если номер не отвечает
+	ForwardNotAnswerTimeout int    `json:""` //Колличество гудков, которые необходимо подождать для ответа номера
+}
+
+// BRResponse Возвращаемое значение:
+type BRResponse struct {
+	Status  int           `json:""` // Статус переадресации = [ON (Переадресация включена), OFF (Переадресация выключена)]
+	Forward BasicRedirect `json:""` // Номера для переадресации
+}
+
+// BwlStatusResponse
+type BwlStatusResponse struct {
+	Status    int       `json:""` // [BLACK_LIST_ON (Не принимать звонки с указанных в списке правил номеров), WHITE_LIST_ON (Принимать звонки только с указанных в списке правил номеров), OFF (Услуга отключена)]
+	BlackList []BwlRule `json:""`
+	WhiteList []BwlRule `json:""`
+}
+
+// BwlRule
+type BwlRule struct {
+	Id        int      `json:""`
+	Name      string   `json:""`
+	Schedule  int      `json:""` // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
+	PhoneList []string `json:""`
+}
+
+// BwlRuleAdd
+type BwlRuleAdd struct {
+	Type int           `json:""` // [BLACK_LIST (Не принимать звонки с указанных в списке правил номеров), WHITE_LIST (Принимать звонки только с указанных в списке правил номеров)]
+	Rule BwlRuleUpdate `json:""`
+}
+
+// BwlRuleUpdate Запрос для обновления правила
+type BwlRuleUpdate struct {
+	Name      string   `json:""`
+	Schedule  int      `json:""` // [ROUND_THE_CLOCK (Круглосуточно), WORKING_TIME (Рабочее время), NON_WORKING_TIME_AND_HOLIDAYS (Нерабочие часы и выходные)]
+	PhoneList []string `json:""`
+}
+type NumberInfo struct {
+	NumberId string `json:""` // Идентификатор входящего номера
+	Phone    string `json:""` //Номер телефона
+}
+type SubscriptionRequest struct {
+	Pattern          string `json:""` //Идентификатор, входящий или добавочный номер абонента или номера
+	Expires          int    `json:""` //Длительность подписки
+	SubscriptionType int    `json:""` // Тип подписки = [BASIC_CALL (Базовая информация о вызове), ADVANCED_CALL (Расширеная информация о вызове)]
+	Url              string `json:""`
+}
+type SubscriptionResult struct {
+	SubscriptionId string `json:""` //Идентификатор подписки
+	Expires        int    `json:""` //Длительность подписки
+}
+type SubscriptionInfo struct {
+	SubscriptionId   string `json:""` //Идентификатор подписки
+	TargetType       int    `json:""` //Тип объекта, для которого сформирована подписка = [GROUP (События всей группы), ABONENT (События абонента), NUMBER (События номера)]
+	TargetId         string `json:""` //Идентификатор объекта, для которого сформирована подписка
+	SubscriptionType int    `json:""` //Тип подписки = [BASIC_CALL (Базовая информация о вызове), ADVANCED_CALL (Расширеная информация о вызове)]
+	Expires          int    `json:""` //Длительность подписки
+	Url              string `json:""` //URL приложения
+}
+
+// CallRecord структура хранения подробной информации об отдельной записи
+type CallRecord struct {
+	Id         string    //Идентификатор записи
+	ExternalId string    //Внешний идентификатор записи
+	Phone      string    //Мобильный номер абонента
+	Direction  int       //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
+	Date       time.Time //Дата и время разговора
+	Duration   int       //Длительность разговора в миллисекундах
+	FileSize   int       //Размер файла записи разговора
+	Comment    string    //Комментарий к записи разговора
+	Abonent    Abonent   //Абонент
+}
+
+// APIClient структура для хранения информации об абоненте
+type APIClientSettings struct {
 	Username      string
-	Passwrd       string
+	Pwd           string
 	PeriodInHours int
-	FtpLogin      string
-	FtpPsw        string
 	RecordListUrl string
 	RecordFileUrl string
 	Provider      string
-	DBTable       string
-	FTPUrl        string
-	Ip            string
-)
-
-// Количество файлов, информация о которых возвращается нашей утилите
-var PageSize int
-
-// Records структура хранения подробной информации о записях и их количестве
-type RecordInfos struct {
-	XMLName   xml.Name     `xml:"ListCallRecordResponse"`
-	CallInfos []RecordInfo `xml:"CallRecord"`
-	Count     int          `xml:"totalRecordQuantity"`
 }
 
 // TimeRange структура хранения начальной и конечной дат, за которые запрашиваются записи разговоров
@@ -49,303 +147,269 @@ type TimeRange struct {
 	EndStamp   time.Time
 }
 
-// Record структура хранения подробной информации об отдельной записи
-type RecordInfo struct {
-	Id            int       `xml:"-"`
-	RecordId      int64     `xml:"recordId"`
-	InternalId    int64     `xml:"-"`
-	AbonentPhone  string    `xml:"Abonent>phone"`
-	ClientPhone   string    `xml:"phone"`
-	CallDirection string    `xml:"callDirection"`
-	CallDate      time.Time `xml:"date"`
-	Duration      int64     `xml:"duration"`
-	FileSize      int64     `xml:"-"`
-	Status        string    `xml:"-"`
-	SaveDate      time.Time `xml:"-"`
-	Provider      string    `xml:"-"`
-}
+var cfg APIClientSettings
 
-// GetRecord метод возвращает ифно об записей по индексу
-func (r *RecordInfos) GetRecord(i int64) *RecordInfo {
-	return &r.CallInfos[i]
-}
-
-// IRecordsInfoProvider интерфейс для отправки запросов на получение файлов разговоров
-type IRecordsInfoProvider interface {
-	Len() int64
-	GetRecordInfo(index int64) IRecordInfoProvider
-}
-
-// IRecordInfoProvider интерфейс для отправки запросов на получение файлов разговоров, хранит инфо об отдельной записи
-type IRecordInfoProvider interface {
-	GetId() int64
-	GetStatus() string
-	SetStatus(s string)
-}
-
-// Len метод расситывает количество записей
-func (r *RecordInfos) Len() int64 {
-	return int64(len(r.CallInfos))
-}
-
-// GetRecordInfo метод возвращает инфо об отдельной записи, в данном случае - полную
-func (r *RecordInfos) GetRecordInfo(index int64) IRecordInfoProvider {
-	return &r.CallInfos[index]
-}
-
-// GetId метод возвращает ID записи разговора
-func (r *RecordInfo) GetId() int64 {
-	return r.RecordId
-}
-
-// GetStatus метод возвращает статус хранения записи разговора
-func (r *RecordInfo) GetStatus() string {
-	return r.Status
-}
-
-// SetStatus метод устанавливает статус хранения записи разговора
-func (r *RecordInfo) SetStatus(s string) {
-	r.Status = s
-}
-
-//BAPIError Тип хранения ошибок
-type BAPIError struct {
+//BeeAPIError Тип хранения ошибок
+type BeeAPIError struct {
 	Msg string
 }
 
-func (d BAPIError) Error() string {
+func (d BeeAPIError) Error() string {
 	return d.Msg
 }
 
-// BuildXMLRequest Подготавливает тело запроса на получение информации о записях на сервере Билайн
-// dir - аргумент типа звонков(входящие или исхордящие)
-func BuildXMLRequest(dir string, t TimeRange) string {
-	PageSize = 200
-	return `<?xml version="1.0" encoding="utf-8"?>
-	<tns:ListCallRecordRequest xmlns:tns="http://client.pub.api.cloudpbx.beeline.ru">
-	<pageNumber>0</pageNumber>
-	<pageSize>` + strconv.Itoa(PageSize) + `</pageSize>
-	<direction>` + dir + `</direction>
-	<dateFrom>` + t.StartStamp.Format(time.RFC3339) + `</dateFrom>
-	<dateTo>` + t.EndStamp.Format(time.RFC3339) + `</dateTo>
-	<sort>
-	<direction>ASC</direction>
-	<field>Date</field>
-	</sort>
-	</tns:ListCallRecordRequest>`
+//  ------------------------------------- Операции с абонентами -------------------------------------
+//  ------------------------------------- Простая переадресация вызовов -------------------------------------
+// GetAbonent Возвращает список всех абонентов
+func GetAbonents() Abonents {
+
 }
 
-// GetRecordsInfoFromServer Получает информацию о количестве записей на сервере Билайн за данных период
-func GetRecordsInfoFromServer(r string) (*RecordInfos, error) {
+// GetAbonents Ищет абонента по идентификатору, мобильному или добавочному номеру
+// id - Идентификатор, мобильный или добавочный номер абонента
+func GetAbonent(id string) Abonent {
 
-	reqBody := bytes.NewBufferString(r)
-	req, err := http.NewRequest("PUT", RecordListUrl, reqBody)
-	if err != nil {
-		return nil, BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение информации о файлах:" + err.Error()}
-	}
-
-	req.Header.Set("Content-Type", "application/xml")
-	req.SetBasicAuth(Username, Passwrd)
-	cl := &http.Client{}
-	resp, err := cl.Do(req)
-	if err != nil {
-		return nil, BAPIError{Msg: "Возникла ошибка при отправке запроса: " + err.Error()}
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, BAPIError{Msg: "Возникла ошибка! Получен ответ от сервера: " + resp.Status + " Код ответа: " + strconv.Itoa(resp.StatusCode)}
-	}
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, BAPIError{Msg: "Ошибка при обработке ответа от сервера: " + err.Error()}
-	}
-	body := bytes.NewBufferString(string(bodyBytes))
-	var rs RecordInfos
-	xmlBytes, err := ioutil.ReadAll(body)
-	if err != nil {
-		return nil, BAPIError{Msg: "Ошибка при обработке ответа от сервера: " + err.Error()}
-	}
-	err = xml.Unmarshal(xmlBytes, &rs)
-	if err != nil {
-		return nil, BAPIError{Msg: "Ошибка при обработке ответа от сервера: " + err.Error()}
-	}
-	if rs.Count == 0 {
-		log.Println("На сервере не найдено записей разговоров за указанный период. Программа завершила работу")
-		return nil, nil
-	} else {
-		log.Printf("На сервере найдено %d записи(ей) разговоров за указанный период...", rs.Count)
-	}
-	return &rs, nil
 }
 
-// GetWavFilesFromServer Получает и сохраняет wav файлы записей с сервера
-func GetWavFilesFromServer(r IRecordsInfoProvider, todayWavFolder string, db *sql.DB) error {
-	if r == nil {
-		return nil
-	}
-	length := r.Len()
-	for i := int64(0); i < length; i++ {
-		_, err := GetWavFileFromServer(r.GetRecordInfo(i), todayWavFolder, db)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+// GetAgentStatus Возвращает статус агента call-центра
+// id - Идентификатор, мобильный или добавочный номер абонента
+func GetAgentStatus(id string) int {
+
 }
 
-// GetWavFileFromServer Получает и сохраняет отдельный wav файл записи с сервера
-func GetWavFileFromServer(r IRecordInfoProvider, todayWavFolder string, db *sql.DB) (bool, error) {
-	if isFileAlreadyUploaded(r.GetId(), db) {
-		r.SetStatus("saved")
-		return true, nil
-	}
-	r.SetStatus("failed")
-	body := []byte{}
-	recIdStr := strconv.FormatInt(r.GetId(), 10)
-	recordReq, err := http.NewRequest("GET", RecordFileUrl+recIdStr, nil)
-	if err != nil {
-		return false, BAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
-	}
-	recordReq.Header.Set("Content-Type", "application/xml")
-	recordReq.SetBasicAuth(Username, Passwrd)
-	cl := &http.Client{}
-	resp, err := cl.Do(recordReq)
-	if err != nil {
-		return false, BAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
-	}
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return false, BAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
-	}
-	if _, err := os.Stat(todayWavFolder); os.IsNotExist(err) {
-		err = os.MkdirAll(todayWavFolder, 0777)
-		if err != nil {
-			return false, BAPIError{Msg: "Ошибка при создании каталога для хранения wav файлов" + err.Error()}
-		}
-	}
-	recordFile, err := os.Create(todayWavFolder + recIdStr + ".wav")
-	if err != nil {
+// SetAgentStatus Устанавливает статус агента call-центра
+// id - Идентификатор, мобильный или добавочный номер абонента
+// newStatus - Новый статус агента
+func SetAgentStatus(id string, newStatus string) {
 
-		return false, BAPIError{Msg: "Ошибка при сохранении wav файла из потока" + err.Error()}
-	}
-	_, err = recordFile.Write(body)
-	if err != nil {
-		return false, err
-	}
-	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно сохранен на диске"
-	log.Println(msg)
-	return false, nil
 }
 
-// ConvertWavToMp3Files Конвертирует файлы записей из wav в mp3 формат
-func ConvertWavToMp3Files(r *RecordInfos, todayWavFolder string, todayMp3Folder string) error {
-	if r == nil {
-		return nil
-	}
-	length := r.Len()
-	for i := int64(0); i < length; i++ {
-		err := ConvertWavToMp3File(&r.CallInfos[i], todayWavFolder, todayMp3Folder)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+// GetRecordingStatus Возвращает статус записи разговоров для абонента
+// id - Идентификатор, мобильный или добавочный номер абонента
+func GetRecordingStatus(id string) int {
+
 }
 
-// ConvertWavToMp3File Конвертирует отдельный файл записи из wav в mp3 формат и сохраняет информацию и статус в таблицу БД
-func ConvertWavToMp3File(r *RecordInfo, todayWavFolder string, todayMp3Folder string) error {
-	if r.Status == "saved" {
-		return nil
-	}
-	r.Provider = Provider
-	if _, err := os.Stat(todayMp3Folder); os.IsNotExist(err) {
-		err := os.MkdirAll(todayMp3Folder, 0777)
-		if err != nil {
-			return BAPIError{Msg: "Ошибка при создании каталога для хранения mp3 файлов" + err.Error()}
-		}
-	}
-	recIdStr := strconv.FormatInt(r.GetId(), 10)
+// TurnOnRecording Включает запись разговоров для абонента
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOnRecording(id string) error {
 
-	command := "ffmpeg"
-	a := "-y -i " + todayWavFolder + recIdStr + ".wav -vn -ar 8000 -ac 1 -ab 16.4k -f mp3 " + todayMp3Folder + recIdStr + ".mp3"
-	args := strings.Fields(a)
-	err := exec.Command(command, args...).Run()
-	if err != nil {
-		remErr := os.Remove(todayWavFolder + recIdStr + ".wav")
-		if remErr != nil {
-			return BAPIError{Msg: "Ошибка при удалении поврежденного wav файла. " + remErr.Error() + " Доп ошибка: " + err.Error()}
-		}
-		return BAPIError{Msg: "Ошибка при конвертировании wav в mp3. " + err.Error()}
-	}
-	file, err := os.Open(todayMp3Folder + recIdStr + ".mp3")
-	if err != nil {
-		return BAPIError{Msg: "Ошибка при открытии mp3 файла для расчета размера. " + err.Error()}
-	}
-	fInfo, err := file.Stat()
-	if err != nil {
-		return BAPIError{Msg: "Ошибка получении размера mp3 файла. " + err.Error()}
-	}
-	r.FileSize = fInfo.Size()
-	msg := "Файл " + strconv.FormatInt(r.GetId(), 10) + ".wav успешно преобразован в mp3 формат"
-	log.Println(msg)
-	return nil
 }
 
-// SaveRecordInfoToDB Сохраняет информацию об отдельной в БД, включая статус после конвертирования в mp3
-func SaveRecordInfoToDB(r *RecordInfo, db *sql.DB) error {
-	query := ""
-	query = fmt.Sprintf("INSERT INTO %s (record_id,abonent,phone,call_direction,call_date,duration,file_size,status,provider) VALUES(%d,'%s','%s','%s','%s',%d,%d,'%s','%s')",
-		DBTable, r.RecordId, r.AbonentPhone, r.ClientPhone, r.CallDirection, r.CallDate.Format(time.RFC3339), r.Duration, r.FileSize, r.Status, r.Provider)
-	_, err := db.Exec(query)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	return nil
+// TurnOffRecording Отключает запись разговоров для абонента
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOffRecording(id string) error {
+
 }
 
-// LoadRecordsOnFTP Отсылает запись в формате mp3 и удаляет локальную копии mp3 и wav файлов
-func LoadRecordOnFTP(r *RecordInfo, mp3Folder string, db *sql.DB, ftp *goftp.FTP) (float32, error) {
-	var length float32 = 0.00
-	if _, err := os.Stat(mp3Folder); os.IsNotExist(err) {
-		return 0, nil
-	}
-	err := filepath.Walk(mp3Folder, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			reg, err := regexp.MatchString(strconv.FormatInt(r.GetId(), 10)+".mp3", info.Name())
-			if err == nil && reg {
-				file, err := os.Open(path)
-				if err != nil {
-					return err
-				}
-				err = ftp.Stor(file.Name(), file)
-				if err != nil {
-					return err
-				}
-				r.Status = "saved"
-				SaveRecordInfoToDB(r, db)
-				log.Println("Файл сохранен на FTP сервере по следующему пути " + file.Name())
-			}
-			return nil
-		}
-		return nil
-	})
-	if err != nil {
-		return 0, BAPIError{Msg: "Ошибка при переборе mp3 файлов. " + err.Error()}
-	}
-	lenInt := r.FileSize
-	length = (float32(lenInt) / 1024) / 1024
-	return length, nil
+//DoCall Совершает звонок от имени абонента
+// id - Идентификатор, мобильный или добавочный номер абонента
+// telNumber -Номер телефона - 10 цифр
+func DoCall(id string, telNumber string) string {
+
 }
 
-// isFileAlreadyUploaded Вспомогательная функция проверят, был ли обработан ранее файл записи с ID recordId
-func isFileAlreadyUploaded(recordId int64, db *sql.DB) bool {
-	query := fmt.Sprintf("SELECT status FROM %s WHERE record_id=%d", DBTable, recordId)
-	status := ""
-	row := db.QueryRow(query)
-	row.Scan(&status)
-	return status == "saved"
+// TurnOnNumberToAbonent Подключает дополнительный номер абоненту
+// id - Идентификатор, мобильный или добавочный номер абонента
+// telNumber -Подключаемый номер телефона - 10 цифр
+// schedule - Расписание перенаправления на номер
+func TurnOnNumberToAbonent(id string, telNumber string, schedule int) error {
+
+}
+
+// TurnOffNumberToAbonent Отключает дополнительный номер абонента
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOffNumberToAbonent(id string) error {
+
+}
+
+//  ------------------------------------- Простая переадресация вызовов -------------------------------------
+
+// GetBasicRedirectStatus Возвращает статус базовой переадресации
+// id - Идентификатор, мобильный или добавочный номер абонента
+func GetBasicRedirectStatus(id string) int {
+
+}
+
+// TurnOnBasicRedirect Включает базовую переадресацию
+// id - Идентификатор, мобильный или добавочный номер абонента
+// br - Номера для переадресации
+func TurnOnBasicRedirect(id string, br BasicRedirect) error {
+
+}
+
+// TurnOffBasicRedirect Отключает базовую переадресацию
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOffBasicRedirect(id string) error {
+
+}
+
+//  ------------------------------------- Выборочная переадресация вызовов -------------------------------------
+
+// Возвращает список правил выборочной переадресации
+// id - Идентификатор, мобильный или добавочный номер абонента
+func GetSelectiveCallRules(id string) (CfsStatusResponse, error) {
+
+}
+
+// Добавляет правило для выборочной переадресации
+// id - Идентификатор, мобильный или добавочный номер абонента
+// rule -Запрос для добавления правила
+func AddSelectiveCallRule(id string, rule CfsRuleUpdate) error {
+
+}
+
+// Включает выборочную переадресацию
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOnSelectiveRedirect(id string) error {
+
+}
+
+// UpdateSelectiveCallRule Обновляет правило
+// id - Идентификатор, мобильный или добавочный номер абонента
+// ruleID -Идентификатор правила
+// rule - Запрос для обновления правила
+func UpdateSelectiveCallRule(id string, ruleID int, rule CfsRuleUpdate) error {
+
+}
+
+// TurnOffSelectiveRedirect Отключает выборочную переадресацию
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOffSelectiveRedirect(id string) error {
+
+}
+
+// DeleteSelectiveRedirect Удаляет правило
+// id - Идентификатор, мобильный или добавочный номер абонента
+// ruleID - Идентификатор правила
+func DeleteSelectiveCallRule(id string, ruleID int) error {
+
+}
+
+//  ------------------------------------- Выборочный прием звонков -------------------------------------
+
+// Статус и список правил для выборочного приема звонков
+// id - Идентификатор, мобильный или добавочный номер абонента
+func IncCallRules(id string) (BwlStatusResponse, error) {
+
+}
+
+// AddIncCallRule Добавляет правило для выборочного приема звонков
+// id - Идентификатор, мобильный или добавочный номер абонента
+// ruleUpdate - Запрос для добавления правила
+func AddIncCallRule(id string, rule BwlRuleAdd, ruleUpdate BwlRuleUpdate) int {
+
+}
+
+// TurnOnSelectiveCallReceive Включает выборочный прием звонков
+// id - Идентификатор, мобильный или добавочный номер абонента
+// t - Тип правила
+func TurnOnSelectiveCallReceive(id string, t int) error {
+}
+
+// UpdateSelectiveReceiveRule Обновляет правило для выборочного приема звонков
+// id - Идентификатор, мобильный или добавочный номер абонента
+// ruleID - Идентификатор правила
+// ruleUpdate -Запрос для обновления правила
+func UpdateSelectiveReceiveRule(id string, ruleID int, ruleUpdate BwlRuleUpdate) error {
+
+}
+
+// TurnOffSelectiveReceiveRule Отключает выборочный прием звонков
+// id - Идентификатор, мобильный или добавочный номер абонента
+func TurnOffSelectiveReceiveRule(id string) error {
+
+}
+
+// DeleteSelectiveReceiveRule Удаляет правило для выборочного приема звонков
+// id - Идентификатор, мобильный или добавочный номер абонента
+// ruleID - Идентификатор правила
+func DeleteSelectiveReceiveRule(id string, ruleId int) error {
+
+}
+
+//  ------------------------------------- Операции с записями разговоров  -------------------------------------
+
+// GetRecords Записи разговоров передаются по порядку начиная со следующей после переданного
+// ID или с первой записи, если ID не передан. За один запрос передаётся не более чем 100 записей.
+// id - Начальный ID записи
+func GetRecords(id string) ([]CallRecord, error) {
+
+}
+
+// DeleteRecord Удаляет запись разговора по уникальному идентификатору записи recordId.
+// id - Идентификатор записи разговора
+func DeleteRecord(id string) error {
+
+}
+
+// GetRecordInfo Возвращает запись разговора по уникальному идентификатору записи recordId.
+// id - Идентификатор записи разговора
+func GetRecordInfo(id string) (CallRecord, error) {
+
+}
+
+// GetRecordInfoFromEvent Возвращает запись разговора по ID разговора из события и ID пользователя из того же события.
+// id - Идентификатор разговора из события
+// userId - Идентификатор пользователя из события
+func GetRecordInfoFromEvent(id string, userId string) (CallRecord, error) {
+
+}
+
+// GetRecordFile Возвращает файл записи разговора по уникальному идентификатору записи recordId
+// id - Идентификатор разговора из события
+
+func GetRecordFile(id string) (Reader, error) {
+
+}
+
+// GetRecordFileFromEvent Возвращает запись разговора по ID разговора  из события и ID пользователя из того же события.
+// id - Идентификатор разговора из события
+// userId - Идентификатор пользователя из события
+
+func GetRecordFileFromEvent(id string, userId string) (Reader, error) {
+
+}
+
+//  ------------------------------------- Операции со входящими номерами  -------------------------------------
+
+// GetAllIncNumbers Возвращает список всех входящих номеров
+// id - Идентификатор разговора из события
+// userId - Идентификатор пользователя из события
+
+func GetAllIncNumbers() ([]NumberInfo, error) {
+
+}
+
+// FindIncNumberById Ищет входящий номер по идентификатору, номеру или добавочному номеру
+// id - Идентификатор, номер или добавочный номер
+
+func FindIncNumberById(id string) (NumberInfo, error) {
+
+}
+
+//  ------------------------------------- Подписка на Xsi-Events  -------------------------------------
+
+// XSIEventSubscribtion Формирует подписку на Xsi-Events
+// Подписка может быть использована для интеграции со сторонними системами, которым необходим контроль над звонками абонентов облачной АТС в реальном времени.
+// API использует механизм подписки на события, ассоциированные с тем или иным абонентом, номером или всем клиентом.
+// Например, Абонент облачной АТС принимает вызов, сторонняя CRM система получает обновления о текущем статусе вызова (ringing, established, completed).
+// req - Запрос для подписки на события
+
+func XSIEventSubscription(reg SubscriptionRequest) (SubscriptionResult, error) {
+
+}
+
+// GetXSIEventSubscriptionInfo Возвращает информацию о подписке на Xsi-Events
+// id - Идентификатор подписки
+
+func GetXSIEventSubscriptionInfo(id string) (SubscriptionInfo, error) {
+
+}
+
+// TurnOffXSIEventSubscription Отключает подписку на Xsi-Events
+// id - Идентификатор отключаемой подписки
+
+func TurnOffXSIEventSubscription(id string) error {
+
 }
