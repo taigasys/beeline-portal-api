@@ -368,7 +368,11 @@ func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 	}
 
 	recs := []CallRecord{}
-	if err := json.Unmarshal(createRequest("GET", url, c.Token, "")); err != nil {
+	body, err := createRequest("GET", url, c.Token, "")
+	if err != nil {
+		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров " + err.Error()}
+	}
+	if err := json.Unmarshal(body, &recs); err != nil {
 		return nil, BeeAPIError{Msg: "Ошибка при парсинге ответа при получении информации о записях разговоров " + err.Error()}
 	}
 
