@@ -361,8 +361,12 @@ var cfg APIClient
 // GetRecords Записи разговоров передаются по порядку начиная со следующей после переданного
 // ID или с первой записи, если ID не передан. За один запрос передаётся не более чем 100 записей.
 // id - Начальный ID записи
-func (c APIClient) GetRecords(id string) ([]CallRecord, error) {
+func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 	url := "https://cloudpbx.beeline.ru/apis/portal/records"
+	if id > 0 {
+		url = fmt.Sprintf("https://cloudpbx.beeline.ru/apis/portal/records?id=%d", id)
+	}
+
 	recs := []CallRecord{}
 	if err := json.Unmarshal(createRequest("GET", url, c.Token, "")); err != nil {
 		return nil, BeeAPIError{Msg: "Ошибка при парсинге ответа при получении информации о записях разговоров " + err.Error()}
