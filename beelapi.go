@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -480,6 +481,10 @@ func UnionRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
 
 }
 
+// createRequest Функция отправки запроса
+// reqType - тип HTTP запроса
+// url - адрес
+// body - тело запроса
 func createRequest(reqType string, url string, body string) {
 	recordReq, err := http.NewRequest(reqType, url, nil)
 	if err != nil {
@@ -500,12 +505,18 @@ func createRequest(reqType string, url string, body string) {
 		return false, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
 }
+
+// createUrlWithQuery Функция формирования url по шаблону, включая строку с параметрами
+// url - адрес
+// params - параметры запроса
 func createUrlWithQuery(url string, params []string) string {
 	r := http.NewRequest
 	q := r.URL.Query
-	var re = regexp.MustCompile(`{(\S*)}`)
-	s := re.ReplaceAllString(url, `$1.$2`)
+	var re = regexp.MustCompile(`{[^\s{}]*}`)
+
 	for i := 0; i < len(params); i++ {
+		s := re.FindStringSubmatchIndex(url, -1)
+		url = strings.Replace(url, url[s[0]:s[1]], params[i], -1)
 
 	}
 
