@@ -189,172 +189,172 @@ var cfg APIClient
 
 //  ------------------------------------- Простая переадресация вызовов -------------------------------------
 // GetAbonent Возвращает список всех абонентов
-func (c APIClient) GetAbonents() Abonents {
+// func (c APIClient) GetAbonents() Abonents {
 
-}
+// }
 
-// GetAbonents Ищет абонента по идентификатору, мобильному или добавочному номеру
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) GetAbonent(id string) Abonent {
+// // GetAbonents Ищет абонента по идентификатору, мобильному или добавочному номеру
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) GetAbonent(id string) Abonent {
 
-}
+// }
 
-// GetAgentStatus Возвращает статус агента call-центра
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) GetAgentStatus(id string) int {
+// // GetAgentStatus Возвращает статус агента call-центра
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) GetAgentStatus(id string) int {
 
-}
+// }
 
-// SetAgentStatus Устанавливает статус агента call-центра
-// id - Идентификатор, мобильный или добавочный номер абонента
-// newStatus - Новый статус агента
-func (c APIClient) SetAgentStatus(id string, newStatus string) {
+// // SetAgentStatus Устанавливает статус агента call-центра
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // newStatus - Новый статус агента
+// func (c APIClient) SetAgentStatus(id string, newStatus string) {
 
-}
+// }
 
-// GetRecordingStatus Возвращает статус записи разговоров для абонента
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) GetRecordingStatus(id string) int {
+// // GetRecordingStatus Возвращает статус записи разговоров для абонента
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) GetRecordingStatus(id string) int {
 
-}
+// }
 
-// TurnOnRecording Включает запись разговоров для абонента
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) TurnOnRecording(id string) error {
+// // TurnOnRecording Включает запись разговоров для абонента
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) TurnOnRecording(id string) error {
 
-}
+// }
 
-// TurnOffRecording Отключает запись разговоров для абонента
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) TurnOffRecording(id string) error {
+// // TurnOffRecording Отключает запись разговоров для абонента
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) TurnOffRecording(id string) error {
 
-}
+// }
 
-//DoCall Совершает звонок от имени абонента
-// id - Идентификатор, мобильный или добавочный номер абонента
-// telNumber -Номер телефона - 10 цифр
-func (c APIClient) DoCall(id string, telNumber string) string {
+// //DoCall Совершает звонок от имени абонента
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // telNumber -Номер телефона - 10 цифр
+// func (c APIClient) DoCall(id string, telNumber string) string {
 
-}
+// }
 
-// TurnOnNumberToAbonent Подключает дополнительный номер абоненту
-// id - Идентификатор, мобильный или добавочный номер абонента
-// telNumber -Подключаемый номер телефона - 10 цифр
-// schedule - Расписание перенаправления на номер
-func (c APIClient) TurnOnNumberToAbonent(id string, telNumber string, schedule int) error {
+// // TurnOnNumberToAbonent Подключает дополнительный номер абоненту
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // telNumber -Подключаемый номер телефона - 10 цифр
+// // schedule - Расписание перенаправления на номер
+// func (c APIClient) TurnOnNumberToAbonent(id string, telNumber string, schedule int) error {
 
-}
+// }
 
-// TurnOffNumberToAbonent Отключает дополнительный номер абонента
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) TurnOffNumberToAbonent(id string) error {
+// // TurnOffNumberToAbonent Отключает дополнительный номер абонента
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) TurnOffNumberToAbonent(id string) error {
 
-}
+// }
 
-//  ------------------------------------- Простая переадресация вызовов -------------------------------------
+// //  ------------------------------------- Простая переадресация вызовов -------------------------------------
 
-// GetBasicRedirectStatus Возвращает статус базовой переадресации
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) GetBasicRedirectStatus(id string) int {
+// // GetBasicRedirectStatus Возвращает статус базовой переадресации
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) GetBasicRedirectStatus(id string) int {
 
-}
+// }
 
-// TurnOnBasicRedirect Включает базовую переадресацию
-// id - Идентификатор, мобильный или добавочный номер абонента
-// br - Номера для переадресации
-func (c APIClient) TurnOnBasicRedirect(id string, br BasicRedirect) error {
+// // TurnOnBasicRedirect Включает базовую переадресацию
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // br - Номера для переадресации
+// func (c APIClient) TurnOnBasicRedirect(id string, br BasicRedirect) error {
 
-}
+// }
 
-// TurnOffBasicRedirect Отключает базовую переадресацию
-// id - Идентификатор, мобильный или добавочный номер абонента
-func TurnOffBasicRedirect(id string) error {
+// // TurnOffBasicRedirect Отключает базовую переадресацию
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func TurnOffBasicRedirect(id string) error {
 
-}
+// }
 
-//  ------------------------------------- Выборочная переадресация вызовов -------------------------------------
+// //  ------------------------------------- Выборочная переадресация вызовов -------------------------------------
 
-// Возвращает список правил выборочной переадресации
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) GetSelectiveCallRules(id string) (CfsStatusResponse, error) {
+// // Возвращает список правил выборочной переадресации
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) GetSelectiveCallRules(id string) (CfsStatusResponse, error) {
 
-}
+// }
 
-// Добавляет правило для выборочной переадресации
-// id - Идентификатор, мобильный или добавочный номер абонента
-// rule -Запрос для добавления правила
-func (c APIClient) AddSelectiveCallRule(id string, rule CfsRuleUpdate) error {
+// // Добавляет правило для выборочной переадресации
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // rule -Запрос для добавления правила
+// func (c APIClient) AddSelectiveCallRule(id string, rule CfsRuleUpdate) error {
 
-}
+// }
 
-// Включает выборочную переадресацию
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) TurnOnSelectiveRedirect(id string) error {
+// // Включает выборочную переадресацию
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) TurnOnSelectiveRedirect(id string) error {
 
-}
+// }
 
-// UpdateSelectiveCallRule Обновляет правило
-// id - Идентификатор, мобильный или добавочный номер абонента
-// ruleID -Идентификатор правила
-// rule - Запрос для обновления правила
-func (c APIClient) UpdateSelectiveCallRule(id string, ruleID int, rule CfsRuleUpdate) error {
+// // UpdateSelectiveCallRule Обновляет правило
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // ruleID -Идентификатор правила
+// // rule - Запрос для обновления правила
+// func (c APIClient) UpdateSelectiveCallRule(id string, ruleID int, rule CfsRuleUpdate) error {
 
-}
+// }
 
-// TurnOffSelectiveRedirect Отключает выборочную переадресацию
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) TurnOffSelectiveRedirect(id string) error {
+// // TurnOffSelectiveRedirect Отключает выборочную переадресацию
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) TurnOffSelectiveRedirect(id string) error {
 
-}
+// }
 
-// DeleteSelectiveRedirect Удаляет правило
-// id - Идентификатор, мобильный или добавочный номер абонента
-// ruleID - Идентификатор правила
-func (c APIClient) DeleteSelectiveCallRule(id string, ruleID int) error {
+// // DeleteSelectiveRedirect Удаляет правило
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // ruleID - Идентификатор правила
+// func (c APIClient) DeleteSelectiveCallRule(id string, ruleID int) error {
 
-}
+// }
 
-//  ------------------------------------- Выборочный прием звонков -------------------------------------
+// //  ------------------------------------- Выборочный прием звонков -------------------------------------
 
-// Статус и список правил для выборочного приема звонков
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) IncCallRules(id string) (BwlStatusResponse, error) {
+// // Статус и список правил для выборочного приема звонков
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) IncCallRules(id string) (BwlStatusResponse, error) {
 
-}
+// }
 
-// AddIncCallRule Добавляет правило для выборочного приема звонков
-// id - Идентификатор, мобильный или добавочный номер абонента
-// ruleUpdate - Запрос для добавления правила
-func (c APIClient) AddIncCallRule(id string, rule BwlRuleAdd, ruleUpdate BwlRuleUpdate) int {
+// // AddIncCallRule Добавляет правило для выборочного приема звонков
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // ruleUpdate - Запрос для добавления правила
+// func (c APIClient) AddIncCallRule(id string, rule BwlRuleAdd, ruleUpdate BwlRuleUpdate) int {
 
-}
+// }
 
-// TurnOnSelectiveCallReceive Включает выборочный прием звонков
-// id - Идентификатор, мобильный или добавочный номер абонента
-// t - Тип правила
-func (c APIClient) TurnOnSelectiveCallReceive(id string, t int) error {
-}
+// // TurnOnSelectiveCallReceive Включает выборочный прием звонков
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // t - Тип правила
+// func (c APIClient) TurnOnSelectiveCallReceive(id string, t int) error {
+// }
 
-// UpdateSelectiveReceiveRule Обновляет правило для выборочного приема звонков
-// id - Идентификатор, мобильный или добавочный номер абонента
-// ruleID - Идентификатор правила
-// ruleUpdate -Запрос для обновления правила
-func (c APIClient) UpdateSelectiveReceiveRule(id string, ruleID int, ruleUpdate BwlRuleUpdate) error {
+// // UpdateSelectiveReceiveRule Обновляет правило для выборочного приема звонков
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // ruleID - Идентификатор правила
+// // ruleUpdate -Запрос для обновления правила
+// func (c APIClient) UpdateSelectiveReceiveRule(id string, ruleID int, ruleUpdate BwlRuleUpdate) error {
 
-}
+// }
 
-// TurnOffSelectiveReceiveRule Отключает выборочный прием звонков
-// id - Идентификатор, мобильный или добавочный номер абонента
-func (c APIClient) TurnOffSelectiveReceiveRule(id string) error {
+// // TurnOffSelectiveReceiveRule Отключает выборочный прием звонков
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// func (c APIClient) TurnOffSelectiveReceiveRule(id string) error {
 
-}
+// }
 
-// DeleteSelectiveReceiveRule Удаляет правило для выборочного приема звонков
-// id - Идентификатор, мобильный или добавочный номер абонента
-// ruleID - Идентификатор правила
-func DeleteSelectiveReceiveRule(id string, ruleId int) error {
+// // DeleteSelectiveReceiveRule Удаляет правило для выборочного приема звонков
+// // id - Идентификатор, мобильный или добавочный номер абонента
+// // ruleID - Идентификатор правила
+// func DeleteSelectiveReceiveRule(id string, ruleId int) error {
 
-}
+// }
 
 //  ------------------------------------- Операции с записями разговоров  -------------------------------------
 
@@ -362,157 +362,158 @@ func DeleteSelectiveReceiveRule(id string, ruleId int) error {
 // ID или с первой записи, если ID не передан. За один запрос передаётся не более чем 100 записей.
 // id - Начальный ID записи
 func (c APIClient) GetRecords(id string) ([]CallRecord, error) {
-	url = "https://cloudpbx.beeline.ru/apis/portal/records"
+	url := "https://cloudpbx.beeline.ru/apis/portal/records"
 	recs := []CallRecord{}
-	recs = json.Unmarshal(createRequest("GET", url, ""))
+	if err := json.Unmarshal(createRequest("GET", url, c.Token, "")); err != nil {
+		return nil, BeeAPIError{Msg: "Ошибка при парсинге ответа при получении информации о записях разговоров " + err.Error()}
+	}
+
 	fmt.Println(recs[0].Phone)
+	return recs, nil
 }
 
 // DeleteRecord Удаляет запись разговора по уникальному идентификатору записи recordId.
 // id - Идентификатор записи разговора
-func (c APIClient) DeleteRecord(id string) error {
+// func (c APIClient) DeleteRecord(id string) error {
 
-}
+// }
 
-// GetRecordInfo Возвращает запись разговора по уникальному идентификатору записи recordId.
-// id - Идентификатор записи разговора
-func (c APIClient) GetRecordInfo(id string) (CallRecord, error) {
+// // GetRecordInfo Возвращает запись разговора по уникальному идентификатору записи recordId.
+// // id - Идентификатор записи разговора
+// func (c APIClient) GetRecordInfo(id string) (CallRecord, error) {
 
-}
+// }
 
-// GetRecordInfoFromEvent Возвращает запись разговора по ID разговора из события и ID пользователя из того же события.
-// id - Идентификатор разговора из события
-// userId - Идентификатор пользователя из события
-func (c APIClient) GetRecordInfoFromEvent(id string, userId string) (CallRecord, error) {
+// // GetRecordInfoFromEvent Возвращает запись разговора по ID разговора из события и ID пользователя из того же события.
+// // id - Идентификатор разговора из события
+// // userId - Идентификатор пользователя из события
+// func (c APIClient) GetRecordInfoFromEvent(id string, userId string) (CallRecord, error) {
 
-}
+// }
 
-// GetRecordFile Возвращает файл записи разговора по уникальному идентификатору записи recordId
-// id - Идентификатор разговора из события
+// // GetRecordFile Возвращает файл записи разговора по уникальному идентификатору записи recordId
+// // id - Идентификатор разговора из события
 
-func (c APIClient) GetRecordFile(id string) (Reader, error) {
+// func (c APIClient) GetRecordFile(id string) (Reader, error) {
 
-}
+// }
 
-// GetRecordFileFromEvent Возвращает запись разговора по ID разговора  из события и ID пользователя из того же события.
-// id - Идентификатор разговора из события
-// userId - Идентификатор пользователя из события
+// // GetRecordFileFromEvent Возвращает запись разговора по ID разговора  из события и ID пользователя из того же события.
+// // id - Идентификатор разговора из события
+// // userId - Идентификатор пользователя из события
 
-func (c APIClient) GetRecordFileFromEvent(id string, userId string) (Reader, error) {
+// func (c APIClient) GetRecordFileFromEvent(id string, userId string) (Reader, error) {
 
-}
+// }
 
-//  ------------------------------------- Операции со входящими номерами  -------------------------------------
+// //  ------------------------------------- Операции со входящими номерами  -------------------------------------
 
-// GetAllIncNumbers Возвращает список всех входящих номеров
-// id - Идентификатор разговора из события
-// userId - Идентификатор пользователя из события
+// // GetAllIncNumbers Возвращает список всех входящих номеров
+// // id - Идентификатор разговора из события
+// // userId - Идентификатор пользователя из события
 
-func (c APIClient) GetAllIncNumbers() ([]NumberInfo, error) {
+// func (c APIClient) GetAllIncNumbers() ([]NumberInfo, error) {
 
-}
+// }
 
-// FindIncNumberById Ищет входящий номер по идентификатору, номеру или добавочному номеру
-// id - Идентификатор, номер или добавочный номер
+// // FindIncNumberById Ищет входящий номер по идентификатору, номеру или добавочному номеру
+// // id - Идентификатор, номер или добавочный номер
 
-func (c APIClient) FindIncNumberById(id string) (NumberInfo, error) {
+// func (c APIClient) FindIncNumberById(id string) (NumberInfo, error) {
 
-}
+// }
 
-//  ------------------------------------- Подписка на Xsi-Events  -------------------------------------
+// //  ------------------------------------- Подписка на Xsi-Events  -------------------------------------
 
-// XSIEventSubscribtion Формирует подписку на Xsi-Events
-// Подписка может быть использована для интеграции со сторонними системами, которым необходим контроль над звонками абонентов облачной АТС в реальном времени.
-// API использует механизм подписки на события, ассоциированные с тем или иным абонентом, номером или всем клиентом.
-// Например, Абонент облачной АТС принимает вызов, сторонняя CRM система получает обновления о текущем статусе вызова (ringing, established, completed).
-// req - Запрос для подписки на события
+// // XSIEventSubscribtion Формирует подписку на Xsi-Events
+// // Подписка может быть использована для интеграции со сторонними системами, которым необходим контроль над звонками абонентов облачной АТС в реальном времени.
+// // API использует механизм подписки на события, ассоциированные с тем или иным абонентом, номером или всем клиентом.
+// // Например, Абонент облачной АТС принимает вызов, сторонняя CRM система получает обновления о текущем статусе вызова (ringing, established, completed).
+// // req - Запрос для подписки на события
 
-func (c APIClient) XSIEventSubscription(reg SubscriptionRequest) (SubscriptionResult, error) {
+// func (c APIClient) XSIEventSubscription(reg SubscriptionRequest) (SubscriptionResult, error) {
 
-}
+// }
 
-// GetXSIEventSubscriptionInfo Возвращает информацию о подписке на Xsi-Events
-// id - Идентификатор подписки
+// // GetXSIEventSubscriptionInfo Возвращает информацию о подписке на Xsi-Events
+// // id - Идентификатор подписки
 
-func (c APIClient) GetXSIEventSubscriptionInfo(id string) (SubscriptionInfo, error) {
+// func (c APIClient) GetXSIEventSubscriptionInfo(id string) (SubscriptionInfo, error) {
 
-}
+// }
 
-// TurnOffXSIEventSubscription Отключает подписку на Xsi-Events
-// id - Идентификатор отключаемой подписки
+// // TurnOffXSIEventSubscription Отключает подписку на Xsi-Events
+// // id - Идентификатор отключаемой подписки
 
-func (c APIClient) TurnOffXSIEventSubscription(id string) error {
+// func (c APIClient) TurnOffXSIEventSubscription(id string) error {
 
-}
+// }
 
-//  ------------------------------------- Индивидуальная переадресация  -------------------------------------
+// //  ------------------------------------- Индивидуальная переадресация  -------------------------------------
 
-// GetIncNumWithRedirect Возвращает список входящих номеров, для которых включена переадресация
+// // GetIncNumWithRedirect Возвращает список входящих номеров, для которых включена переадресация
 
-func (c APIClient) GetIncNumWithRedirect() ([]NumberInfo, error) {
+// func (c APIClient) GetIncNumWithRedirect() ([]NumberInfo, error) {
 
-}
+// }
 
-// TurnOnCustomIncNumRedirect Включает индивидуальную переадресацию для входящих номеров
-//  numberList - Список входящих номеров, для которых должна быть включена переадресация
-func (c APIClient) TurnOnCustomIncNumRedirect(numberList []string) ([]IcrNumbersResult, error) {
+// // TurnOnCustomIncNumRedirect Включает индивидуальную переадресацию для входящих номеров
+// //  numberList - Список входящих номеров, для которых должна быть включена переадресация
+// func (c APIClient) TurnOnCustomIncNumRedirect(numberList []string) ([]IcrNumbersResult, error) {
 
-}
+// }
 
-// TurnOffCustomIncNumRedirect Отключает индивидуальную переадресацию для входящих номеров
-//  numberList - Список входящих номеров, для которых должна быть отключена переадресация
-func (c APIClient) TurnOffCustomIncNumRedirect(numberList []string) ([]IcrNumbersResult, error) {
+// // TurnOffCustomIncNumRedirect Отключает индивидуальную переадресацию для входящих номеров
+// //  numberList - Список входящих номеров, для которых должна быть отключена переадресация
+// func (c APIClient) TurnOffCustomIncNumRedirect(numberList []string) ([]IcrNumbersResult, error) {
 
-}
+// }
 
-// GetRedirectRulesList Возвращает список правил переадресации
-func (c APIClient) GetRedirectRulesList() ([]IcrRouteRule, error) {
+// // GetRedirectRulesList Возвращает список правил переадресации
+// func (c APIClient) GetRedirectRulesList() ([]IcrRouteRule, error) {
 
-}
+// }
 
-// DeleteRedirectRulesList Удаляет список правил переадресации
-// rules - Список правил переадресации
-func (c APIClient) DeleteRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
+// // DeleteRedirectRulesList Удаляет список правил переадресации
+// // rules - Список правил переадресации
+// func (c APIClient) DeleteRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
 
-}
+// }
 
-// ReplaceRedirectRulesList Замещает правила переадресации
-// rules - Список правил переадресации
-func (c APIClient) ReplaceRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
+// // ReplaceRedirectRulesList Замещает правила переадресации
+// // rules - Список правил переадресации
+// func (c APIClient) ReplaceRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
 
-}
+// }
 
-// UnionRedirectRulesList Объединяет существующие правила переадресации с переданным списком правил.
-// rules - Список правил переадресации
-func (c APIClient) UnionRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
+// // UnionRedirectRulesList Объединяет существующие правила переадресации с переданным списком правил.
+// // rules - Список правил переадресации
+// func (c APIClient) UnionRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResult, error) {
 
-}
+// }
 
 // createRequest Функция отправки запроса
 // reqType - тип HTTP запроса
 // url - адрес
 // body - тело запроса
-func createRequest(reqType string, url string, b string) ([]byte, error) {
+func createRequest(reqType string, url string, token string, b string) ([]byte, error) {
 	body := strings.NewReader(b)
 	recordReq, err := http.NewRequest(reqType, url, body)
 	if err != nil {
 		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
-	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", APIClient.Token)
-	q := recordReq.URL.Query
-	for i := 0; i < len(params); i++ {
-		q.add()
-	}
+	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", token)
+
 	cl := &http.Client{}
 	resp, err := cl.Do(recordReq)
 	if err != nil {
 		return nil, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
-	body, err = ioutil.ReadAll(resp.Body)
+	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
-	return body, nil
+	return responseBody, nil
 }
 
 // createUrlWithQuery Функция формирования url по шаблону, включая строку с параметрами
@@ -522,12 +523,10 @@ func createUrlWithQuery(url string, params []string) string {
 	if len(params) == 0 {
 		return url
 	}
-	r := http.NewRequest
-	q := r.URL.Query
 	var re = regexp.MustCompile(`{[^\s{}]*}`)
 
 	for i := 0; i < len(params); i++ {
-		s := re.FindStringSubmatchIndex(url, -1)
+		s := re.FindStringSubmatchIndex(url)
 		url = strings.Replace(url, url[s[0]:s[1]], params[i], -1)
 
 	}
