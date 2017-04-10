@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -405,8 +406,8 @@ func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 // // id - Идентификатор разговора из события
 
 func (c APIClient) GetRecordFile(id string) (io.Reader, error) {
-	url := fmt.Sprintf("https://cloudpbx.beeline.ru/apis/portal/v2/records/{%d}/download", id)
 	var r io.Reader
+	url := fmt.Sprintf("https://cloudpbx.beeline.ru/apis/portal/v2/records/%s/download", id)
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
 		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров " + err.Error()}
@@ -548,4 +549,10 @@ func createUrlWithQuery(url string, params []string) string {
 
 	}
 	return url
+}
+
+func fireError(err error, msg string) {
+	if err != nil {
+		log.Fatalln(msg + err.Error())
+	}
 }
