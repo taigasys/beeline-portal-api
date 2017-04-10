@@ -159,15 +159,15 @@ type IcrRouteResult struct {
 
 // CallRecord структура хранения подробной информации об отдельной записи
 type CallRecord struct {
-	Id         string    `json:"id"`         //Идентификатор записи
-	ExternalId string    `json:"externalId"` //Внешний идентификатор записи
-	Phone      string    `json:"phone"`      //Мобильный номер абонента
-	Direction  int       `json:"direction"`  //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
-	Date       time.Time `json:"date"`       //Дата и время разговора
-	Duration   int       `json:"duration"`   //Длительность разговора в миллисекундах
-	FileSize   int       `json:"fileSize"`   //Размер файла записи разговора
-	Comment    string    `json:"comment"`    //Комментарий к записи разговора
-	Abonent    Abonent   `json:"abonent"`    //Абонент
+	Id         string        `json:"id"`         //Идентификатор записи
+	ExternalId string        `json:"externalId"` //Внешний идентификатор записи
+	Phone      string        `json:"phone"`      //Мобильный номер абонента
+	Direction  int           `json:"direction"`  //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
+	Date       time.Duration `json:"date"`       //Дата и время разговора
+	Duration   int           `json:"duration"`   //Длительность разговора в миллисекундах
+	FileSize   int           `json:"fileSize"`   //Размер файла записи разговора
+	Comment    string        `json:"comment"`    //Комментарий к записи разговора
+	Abonent    Abonent       `json:"abonent"`    //Абонент
 }
 
 // APIClient структура для хранения информации об абоненте
