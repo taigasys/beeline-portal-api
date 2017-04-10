@@ -1,6 +1,8 @@
 package beelapi
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -171,7 +173,6 @@ type CallRecord struct {
 // APIClient структура для хранения информации об абоненте
 type APIClient struct {
 	Token    string
-	Url      string
 	Params   []string
 	Provider string
 }
@@ -182,7 +183,7 @@ type TimeRange struct {
 	EndStamp   time.Time
 }
 
-var cfg APIClientSettings
+var cfg APIClient
 
 //  ------------------------------------- Операции с абонентами -------------------------------------
 
@@ -361,7 +362,10 @@ func DeleteSelectiveReceiveRule(id string, ruleId int) error {
 // ID или с первой записи, если ID не передан. За один запрос передаётся не более чем 100 записей.
 // id - Начальный ID записи
 func (c APIClient) GetRecords(id string) ([]CallRecord, error) {
-
+	url = "https://cloudpbx.beeline.ru/apis/portal/records"
+	recs := []CallRecord{}
+	recs = json.Unmarshal(createRequest("GET", url, ""))
+	fmt.Println(recs[0].Phone)
 }
 
 // DeleteRecord Удаляет запись разговора по уникальному идентификатору записи recordId.
@@ -373,7 +377,6 @@ func (c APIClient) DeleteRecord(id string) error {
 // GetRecordInfo Возвращает запись разговора по уникальному идентификатору записи recordId.
 // id - Идентификатор записи разговора
 func (c APIClient) GetRecordInfo(id string) (CallRecord, error) {
-	c.Url = "https://cloudpbx.beeline.ru/apis/portal/records"
 
 }
 
@@ -489,12 +492,13 @@ func (c APIClient) UnionRedirectRulesList(rules []IcrRouteRule) ([]IcrRouteResul
 // reqType - тип HTTP запроса
 // url - адрес
 // body - тело запроса
-func createRequest(reqType string, url string, body string) {
-	recordReq, err := http.NewRequest(reqType, url, nil)
+func createRequest(reqType string, url string, b string) ([]byte, error) {
+	body := strings.NewReader(b)
+	recordReq, err := http.NewRequest(reqType, url, body)
 	if err != nil {
-		return false, BeeAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
-	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", APIClientSettings.Token)
+	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", APIClient.Token)
 	q := recordReq.URL.Query
 	for i := 0; i < len(params); i++ {
 		q.add()
@@ -502,18 +506,22 @@ func createRequest(reqType string, url string, body string) {
 	cl := &http.Client{}
 	resp, err := cl.Do(recordReq)
 	if err != nil {
-		return false, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return false, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
 	}
+	return body, nil
 }
 
 // createUrlWithQuery Функция формирования url по шаблону, включая строку с параметрами
 // url - адрес
 // params - параметры запроса
 func createUrlWithQuery(url string, params []string) string {
+	if len(params) == 0 {
+		return url
+	}
 	r := http.NewRequest
 	q := r.URL.Query
 	var re = regexp.MustCompile(`{[^\s{}]*}`)
@@ -523,5 +531,5 @@ func createUrlWithQuery(url string, params []string) string {
 		url = strings.Replace(url, url[s[0]:s[1]], params[i], -1)
 
 	}
-
+	return url
 }
