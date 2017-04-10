@@ -1,8 +1,10 @@
 package beelapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -162,7 +164,7 @@ type CallRecord struct {
 	Id         string        `json:"id"`         //Идентификатор записи
 	ExternalId string        `json:"externalId"` //Внешний идентификатор записи
 	Phone      string        `json:"phone"`      //Мобильный номер абонента
-	Direction  int           `json:"direction"`  //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
+	Direction  string        `json:"direction"`  //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
 	Date       time.Duration `json:"date"`       //Дата и время разговора
 	Duration   int           `json:"duration"`   //Длительность разговора в миллисекундах
 	FileSize   int           `json:"fileSize"`   //Размер файла записи разговора
@@ -402,9 +404,16 @@ func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 // // GetRecordFile Возвращает файл записи разговора по уникальному идентификатору записи recordId
 // // id - Идентификатор разговора из события
 
-// func (c APIClient) GetRecordFile(id string) (Reader, error) {
-
-// }
+func (c APIClient) GetRecordFile(id string) (io.Reader, error) {
+	url := fmt.Sprintf("https://cloudpbx.beeline.ru/apis/portal/v2/records/{%d}/download", id)
+	var r io.Reader
+	body, err := createRequest("GET", url, c.Token, "")
+	if err != nil {
+		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров " + err.Error()}
+	}
+	r = bytes.NewReader(body)
+	return r, nil
+}
 
 // // GetRecordFileFromEvent Возвращает запись разговора по ID разговора  из события и ID пользователя из того же события.
 // // id - Идентификатор разговора из события
