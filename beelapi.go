@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -543,24 +542,6 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	}
 	return responseBody, nil
 }
-
-// createUrlWithQuery Функция формирования url по шаблону, включая строку с параметрами
-// url - адрес
-// params - параметры запроса
-func createUrlWithQuery(url string, params []string) string {
-	if len(params) == 0 {
-		return url
-	}
-	var re = regexp.MustCompile(`{[^\s{}]*}`)
-
-	for i := 0; i < len(params); i++ {
-		s := re.FindStringSubmatchIndex(url)
-		url = strings.Replace(url, url[s[0]:s[1]], params[i], -1)
-
-	}
-	return url
-}
-
 func fireError(err error, msg string) {
 	if err != nil {
 		log.Fatalln(msg + err.Error())
