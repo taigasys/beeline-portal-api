@@ -175,18 +175,11 @@ type CallRecord struct {
 
 // APIClient структура для хранения информации об абоненте
 type APIClient struct {
-	Token    string
-	Params   []string
-	Provider string
+	Token      string
+	Params     []string
+	Provider   string
+	BaseApiUrl string
 }
-
-// TimeRange структура хранения начальной и конечной дат, за которые запрашиваются записи разговоров
-type TimeRange struct {
-	StartStamp time.Time
-	EndStamp   time.Time
-}
-
-var cfg APIClient
 
 //  ------------------------------------- Операции с абонентами -------------------------------------
 
@@ -367,16 +360,16 @@ var cfg APIClient
 func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 	url := "https://cloudpbx.beeline.ru/apis/portal/records"
 	if id > 0 {
-		url = fmt.Sprintf("https://cloudpbx.beeline.ru/apis/portal/records?id=%d", id)
+		url = fmt.Sprintf("%s/records?id=%d", c.BaseApiUrl, id)
 	}
 
 	recs := []CallRecord{}
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
-		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров " + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров. " + err.Error()}
 	}
 	if err := json.Unmarshal(body, &recs); err != nil {
-		return nil, BeeAPIError{Msg: "Ошибка при парсинге ответа при получении информации о записях разговоров " + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при парсинге ответа при получении информации о записях разговоров. " + err.Error()}
 	}
 
 	fmt.Println(recs[0].Phone)
@@ -385,9 +378,14 @@ func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 
 // DeleteRecord Удаляет запись разговора по уникальному идентификатору записи recordId.
 // id - Идентификатор записи разговора
-// func (c APIClient) DeleteRecord(id string) error {
-
-// }
+func (c APIClient) DeleteRecord(id string) error {
+	url := fmt.Sprintf("%s/v2/records/%s", c.BaseApiUrl, id)
+	_, err := createRequest("DELETE", url, c.Token, "")
+	if err != nil {
+		return BeeAPIError{Msg: "Ошибка при удалении записи с сервера Билайн. " + err.Error()}
+	}
+	return nil
+}
 
 // // GetRecordInfo Возвращает запись разговора по уникальному идентификатору записи recordId.
 // // id - Идентификатор записи разговора
@@ -407,10 +405,10 @@ func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 
 func (c APIClient) GetRecordFile(id string) (io.Reader, error) {
 	var r io.Reader
-	url := fmt.Sprintf("https://cloudpbx.beeline.ru/apis/portal/v2/records/%s/download", id)
+	url := fmt.Sprintf("%s/v2/records/%s/download", c.BaseApiUrl, id)
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
-		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров " + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров. " + err.Error()}
 	}
 	r = bytes.NewReader(body)
 	return r, nil
@@ -518,18 +516,23 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	body := strings.NewReader(b)
 	recordReq, err := http.NewRequest(reqType, url, body)
 	if err != nil {
-		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при подготовке запроса к серверу Beeline на получение файлов записей. " + err.Error()}
 	}
+	// Устанавливаем HTTP заголовок билайновский для ключа безопасности
 	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", token)
-
-	cl := &http.Client{}
+	// Установка времени ожидания ответа от сервера равной 10 секундам
+	timeout := time.Duration(5 * time.Second)
+	cl := &http.Client{Timeout: timeout}
 	resp, err := cl.Do(recordReq)
 	if err != nil {
-		return nil, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей. " + err.Error()}
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, BeeAPIError{Msg: "Ошибка при отправке запроса к серверу Beeline на получение файлов записей. " + err.Error()}
 	}
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей" + err.Error()}
+		return nil, BeeAPIError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline на получение файлов записей. " + err.Error()}
 	}
 	return responseBody, nil
 }
@@ -555,4 +558,9 @@ func fireError(err error, msg string) {
 	if err != nil {
 		log.Fatalln(msg + err.Error())
 	}
+}
+func (c *APIClient) NewApiClient(token string) {
+	c.Token = token
+	c.Provider = "Beeline"
+	c.BaseApiUrl = "https://cloudpbx.beeline.ru/apis/portal/"
 }
