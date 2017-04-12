@@ -13,8 +13,13 @@ import (
 	"time"
 )
 
+//Настройки клиента
 var client APIClient
+
+//Список записей
 var records []CallRecord
+
+//Отдельная тестируемая запись
 var rec CallRecord
 
 func init() {
@@ -37,6 +42,7 @@ func TestGetRecords(t *testing.T) {
 	records, err := client.GetRecords(0)
 	fireError(err, "Не удалось получить инфо о записях. ")
 	rec = records[0]
+	// Сравниваем результаты ответа и заполненной структуры
 	if rec.Abonent != resp.Abonent {
 		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен номер абонента. Ожидалось %s получено %s", resp.Abonent, rec.Abonent)
 	}
@@ -66,7 +72,7 @@ func TestGetWavFileFromServer(t *testing.T) {
 	defer httpmock.Deactivate()
 	recId := rec.Id
 	url := fmt.Sprintf("%s/v2/records/%s/download", client.BaseApiUrl, recId)
-	file, err := os.Open("test.wav")
+	file, err := os.Open("test/test.wav")
 	fireError(err, "Тестовый файл с записью не удалось открыть")
 	resp, err := ioutil.ReadAll(file)
 	fireError(err, "Тестовый файл с записью не удалось считать")
@@ -88,6 +94,7 @@ func TestDeleteRecord(t *testing.T) {
 	fireError(err, "")
 }
 
+//   RegisterJsonDataMock Добавление обработчика к имитатору сервера url на запрос инфо о записях
 func RegisterJsonDataMock(method string, url string, r interface{}) {
 	httpmock.RegisterResponder(method, url,
 		func(req *http.Request) (*http.Response, error) {
@@ -98,6 +105,8 @@ func RegisterJsonDataMock(method string, url string, r interface{}) {
 			return resp, nil
 		})
 }
+
+//  RegisterChunkedDataMock Добавление обработчика к имитатору сервера url на запрос получении файла записи
 func RegisterChunkedDataMock(method string, url string, r []byte) {
 	httpmock.RegisterResponder(method, url,
 		func(req *http.Request) (*http.Response, error) {
