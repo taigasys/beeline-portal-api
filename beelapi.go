@@ -358,11 +358,10 @@ type APIClient struct {
 // ID или с первой записи, если ID не передан. За один запрос передаётся не более чем 100 записей.
 // id - Начальный ID записи
 func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
-	url := "https://cloudpbx.beeline.ru/apis/portal/records"
+	url := c.BaseApiUrl + "records"
 	if id > 0 {
 		url = fmt.Sprintf("%s/records?id=%d", c.BaseApiUrl, id)
 	}
-
 	recs := []CallRecord{}
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
@@ -521,7 +520,7 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	// Устанавливаем HTTP заголовок билайновский для ключа безопасности
 	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", token)
 	// Установка времени ожидания ответа от сервера равной 10 секундам
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(15 * time.Second)
 	cl := &http.Client{Timeout: timeout}
 	resp, err := cl.Do(recordReq)
 	if err != nil {
@@ -559,8 +558,8 @@ func fireError(err error, msg string) {
 		log.Fatalln(msg + err.Error())
 	}
 }
-func NewApiClient(token string) (c *APIClient) {
-	c = &APIClient{}
+func NewApiClient(token string) (c APIClient) {
+	c = APIClient{}
 	c.Token = token
 	c.Provider = "Beeline"
 	c.BaseApiUrl = "https://cloudpbx.beeline.ru/apis/portal/"
