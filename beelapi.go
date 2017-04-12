@@ -559,8 +559,10 @@ func fireError(err error, msg string) {
 		log.Fatalln(msg + err.Error())
 	}
 }
-func (c *APIClient) NewApiClient(token string) {
+func NewApiClient(token string) (c *APIClient) {
+	c = &APIClient{}
 	c.Token = token
 	c.Provider = "Beeline"
 	c.BaseApiUrl = "https://cloudpbx.beeline.ru/apis/portal/"
+	return c
 }
