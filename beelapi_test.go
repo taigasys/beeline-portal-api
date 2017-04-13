@@ -31,38 +31,40 @@ func init() {
 func TestGetRecords(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.Deactivate()
-	resp := CallRecord{}
-	resp.Id = "1"
-	resp.Abonent.Phone = "0000000000"
-	resp.Date = time.Until(time.Now())
-	resp.Direction = "OUTBOUND"
-	resp.Duration = 100000
-	resp.FileSize = 200000
-	RegisterJsonDataMock("GET", client.BaseApiUrl+"records", resp)
+	testRecs := []CallRecord{}
+	testRec := CallRecord{}
+	testRec.Id = "test"
+	testRec.Abonent.Phone = "0000000000"
+	testRec.Date = time.Until(time.Now())
+	testRec.Direction = "OUTBOUND"
+	testRec.Duration = 100000
+	testRec.FileSize = 200000
+	testRecs = append(testRecs, testRec)
+	RegisterJsonDataMock("GET", client.BaseApiUrl+"records", testRecs)
 	records, err := client.GetRecords(0)
 	fireError(err, "Не удалось получить инфо о записях. ")
 	rec = records[0]
 	// Сравниваем результаты ответа и заполненной структуры
-	if rec.Abonent != resp.Abonent {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен номер абонента. Ожидалось %s получено %s", resp.Abonent, rec.Abonent)
+	if rec.Abonent != testRec.Abonent {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен номер абонента. Ожидалось %s получено %s", testRec.Abonent, rec.Abonent)
 	}
-	if rec.Date != resp.Date {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверна дата звонка. Ожидалось %s получено %s", resp.Date, rec.Date)
+	if rec.Date != testRec.Date {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверна дата звонка. Ожидалось %s получено %s", testRec.Date, rec.Date)
 	}
-	if rec.Direction != resp.Direction {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверено направление звонка. Ожидалось %s получено %s", resp.Direction, rec.Direction)
+	if rec.Direction != testRec.Direction {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверено направление звонка. Ожидалось %s получено %s", testRec.Direction, rec.Direction)
 	}
-	if rec.Duration != resp.Duration {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверена продолжительность звонка. Ожидалось %s получено %s", resp.Duration, rec.Duration)
+	if rec.Duration != testRec.Duration {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверена продолжительность звонка. Ожидалось %s получено %s", testRec.Duration, rec.Duration)
 	}
-	if rec.FileSize != resp.FileSize {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен размер файла. Ожидалось %s получено %s", resp.FileSize, rec.FileSize)
+	if rec.FileSize != testRec.FileSize {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен размер файла. Ожидалось %s получено %s", testRec.FileSize, rec.FileSize)
 	}
-	if rec.Id != resp.Id {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен ID записи. Ожидалось %s получено %s", resp.Id, rec.Id)
+	if rec.Id != testRec.Id {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен ID записи. Ожидалось %s получено %s", testRec.Id, rec.Id)
 	}
-	if rec.Phone != resp.Phone {
-		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен номер клиента. Ожидалось %s получено %s", resp.Phone, rec.Phone)
+	if rec.Phone != testRec.Phone {
+		log.Fatalf("Ошибка при проверке ответа на запрос о получении инфо о записях. Неверен номер клиента. Ожидалось %s получено %s", testRec.Phone, rec.Phone)
 	}
 }
 
@@ -71,7 +73,8 @@ func TestGetWavFileFromServer(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.Deactivate()
 	recId := rec.Id
-	url := fmt.Sprintf("%s/v2/records/%s/download", client.BaseApiUrl, recId)
+	url := fmt.Sprintf("%sv2/records/%s/download", client.BaseApiUrl, recId)
+	fmt.Println(url)
 	file, err := os.Open("test/test.wav")
 	fireError(err, "Тестовый файл с записью не удалось открыть")
 	resp, err := ioutil.ReadAll(file)
@@ -85,11 +88,14 @@ func TestGetWavFileFromServer(t *testing.T) {
 	if len(contentOfFile) == 0 {
 		log.Fatalln("Из потока с файлом записи от сервера получен пустой массив данных")
 	}
-
 }
 
-//  TestDeleteRecord Тест на конвертацию из wav файла в mp3
+//  TestDeleteRecord Тест на удаление записи с сервера Билайн
 func TestDeleteRecord(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.Deactivate()
+	url := fmt.Sprintf("%sv2/records/%s", client.BaseApiUrl, rec.Id)
+	RegisterJsonDataMock("DELETE", url, nil)
 	err := client.DeleteRecord(rec.Id)
 	fireError(err, "")
 }

@@ -408,6 +408,7 @@ func (c APIClient) DeleteRecord(id string) error {
 func (c APIClient) GetRecordFile(id string) (io.Reader, error) {
 	var r io.Reader
 	url := fmt.Sprintf("%sv2/records/%s/download", c.BaseApiUrl, id)
+	fmt.Println(url)
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
 		return nil, WrapError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров. " + err.Error()}
