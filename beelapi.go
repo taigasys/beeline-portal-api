@@ -370,20 +370,18 @@ func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 	recs := []CallRecord{}
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
-		return nil, WrapError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров. " + err.Error()}
+		return nil, err
 	}
 	if err := json.Unmarshal(body, &recs); err != nil {
-		return nil, WrapError{Msg: "Ошибка при парсинге ответа при получении информации о записях разговоров. " + err.Error()}
+		return nil, err
 	}
-
-	fmt.Println(recs[0].Phone)
 	return recs, nil
 }
 
 // DeleteRecord Удаляет запись разговора по уникальному идентификатору записи recordId.
 // id - Идентификатор записи разговора
 func (c APIClient) DeleteRecord(id string) error {
-	url := fmt.Sprintf("%s/v2/records/%s", c.BaseApiUrl, id)
+	url := fmt.Sprintf("%sv2/records/%s", c.BaseApiUrl, id)
 	_, err := createRequest("DELETE", url, c.Token, "")
 	if err != nil {
 		return WrapError{Msg: "Ошибка при удалении записи с сервера Билайн. " + err.Error()}
@@ -409,7 +407,7 @@ func (c APIClient) DeleteRecord(id string) error {
 
 func (c APIClient) GetRecordFile(id string) (io.Reader, error) {
 	var r io.Reader
-	url := fmt.Sprintf("%s/v2/records/%s/download", c.BaseApiUrl, id)
+	url := fmt.Sprintf("%sv2/records/%s/download", c.BaseApiUrl, id)
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
 		return nil, WrapError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров. " + err.Error()}
