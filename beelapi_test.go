@@ -1,4 +1,4 @@
-package beelapi
+package beelineapi
 
 import (
 	"fmt"
