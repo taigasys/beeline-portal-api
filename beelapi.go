@@ -526,10 +526,12 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	// Установка времени ожидания ответа от сервера равной 10 секундам
 	timeout := time.Duration(15 * time.Second)
 	cl := &http.Client{Timeout: timeout}
+	recordReq.Close = true
 	resp, err := cl.Do(recordReq)
 	if err != nil {
 		return nil, WrapError{Msg: "Ошибка при отправке запроса к серверу Beeline. " + err.Error()}
 	}
+	defer resp.Body.Close()
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, WrapError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline. " + err.Error()}
@@ -537,7 +539,7 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	if resp.StatusCode != http.StatusOK {
 		err := APIError{}
 		json.Unmarshal(responseBody, &err)
-		return nil, WrapError{Msg: "Ошибка при отправке запроса к серверу Beeline. " + err.Description}
+		return nil, WrapError{Msg: "Ошибка при разборе запроса к серверу Beeline. " + err.Description}
 	}
 	return responseBody, nil
 }
