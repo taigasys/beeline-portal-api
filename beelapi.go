@@ -365,7 +365,7 @@ type CallRecord struct {
 func (c APIClient) GetRecords(id int64) ([]CallRecord, error) {
 	url := c.BaseApiUrl + "records"
 	if id > 0 {
-		url = fmt.Sprintf("%s/records?id=%d", c.BaseApiUrl, id)
+		url = fmt.Sprintf("%sv2/records/%d", c.BaseApiUrl, id)
 	}
 	recs := []CallRecord{}
 	body, err := createRequest("GET", url, c.Token, "")
@@ -408,7 +408,6 @@ func (c APIClient) DeleteRecord(id string) error {
 func (c APIClient) GetRecordFile(id string) (io.Reader, error) {
 	var r io.Reader
 	url := fmt.Sprintf("%sv2/records/%s/download", c.BaseApiUrl, id)
-	fmt.Println(url)
 	body, err := createRequest("GET", url, c.Token, "")
 	if err != nil {
 		return nil, WrapError{Msg: "Ошибка при подготовке запроса на получение информации о записях разговоров. " + err.Error()}
@@ -524,7 +523,7 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	// Устанавливаем HTTP заголовок билайновский для ключа безопасности
 	recordReq.Header.Set("X-MPBX-API-AUTH-TOKEN", token)
 	// Установка времени ожидания ответа от сервера равной 10 секундам
-	timeout := time.Duration(15 * time.Second)
+	timeout := time.Duration(60 * time.Second)
 	cl := &http.Client{Timeout: timeout}
 	recordReq.Close = true
 	resp, err := cl.Do(recordReq)
@@ -537,9 +536,12 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 		return nil, WrapError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline. " + err.Error()}
 	}
 	if resp.StatusCode != http.StatusOK {
-		err := APIError{}
-		json.Unmarshal(responseBody, &err)
-		return nil, WrapError{Msg: "Ошибка при разборе запроса к серверу Beeline. " + err.Description}
+		apiErr := APIError{}
+		err := json.Unmarshal(responseBody, &apiErr)
+		if err != nil {
+			return nil, WrapError{Msg: "Ошибка при чтении ответа с кодом отличным от 200 от Beeline. " + err.Error()}
+		}
+		return nil, WrapError{Msg: "Ошибка при запросе к серверу Beeline. " + apiErr.Description}
 	}
 	return responseBody, nil
 }
