@@ -531,17 +531,12 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 		return nil, WrapError{Msg: "Ошибка при отправке запроса к серверу Beeline. " + err.Error()}
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, WrapError{Msg: fmt.Sprintf("Ошибка при запросе к серверу Beeline. Получен HTTP код ответа %d", resp.StatusCode)}
+	}
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, WrapError{Msg: "Ошибка при чтении ответа после отправке запроса к серверу Beeline. " + err.Error()}
-	}
-	if resp.StatusCode != http.StatusOK {
-		apiErr := APIError{}
-		err := json.Unmarshal(responseBody, &apiErr)
-		if err != nil {
-			return nil, WrapError{Msg: "Ошибка при чтении ответа с кодом отличным от 200 от Beeline. " + err.Error()}
-		}
-		return nil, WrapError{Msg: "Ошибка при запросе к серверу Beeline. " + apiErr.Description}
 	}
 	return responseBody, nil
 }
