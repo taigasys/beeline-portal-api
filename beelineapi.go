@@ -532,7 +532,7 @@ func createRequest(reqType string, url string, token string, b string) ([]byte, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, WrapError{Msg: fmt.Sprintf("Ошибка при запросе к серверу Beeline. Получен HTTP код ответа %d", resp.StatusCode)}
+		return nil, WrapError{Msg: fmt.Sprintf("Ошибка при запросе к серверу Beeline. Получен HTTP код ответа %d. %s", resp.StatusCode, resp.Status)}
 	}
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
