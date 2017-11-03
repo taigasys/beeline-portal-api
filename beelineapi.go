@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"strconv"
 )
 
 const (
@@ -173,19 +174,43 @@ type IcrRouteResult struct {
 	Error  IcrOperationError `json:"error"`  //Описание ошибки
 }
 
+type UnixNano struct {
+	time.Time
+}
 // CallRecord структура хранения подробной информации об отдельной записи
 type CallRecord struct {
 	Id         string        `json:"id"`         //Идентификатор записи
 	ExternalId string        `json:"externalId"` //Внешний идентификатор записи
 	Phone      string        `json:"phone"`      //Мобильный номер абонента
 	Direction  string        `json:"direction"`  //Тип вызова = [INBOUND (Входящий вызов), OUTBOUND (Исходящий вызов)]
-	Date       time.Duration `json:"date"`       //Дата и время разговора
+	Date       UnixNano 	 `json:"date"`       //Дата и время разговора
 	Duration   int           `json:"duration"`   //Длительность разговора в миллисекундах
 	FileSize   int           `json:"fileSize"`   //Размер файла записи разговора
 	Comment    string        `json:"comment"`    //Комментарий к записи разговора
 	Abonent    Abonent       `json:"abonent"`    //Абонент
 }
 
+func (t *UnixNano) MarshalJSON() ([]byte, error) {
+	ts := t.Time.UnixNano()
+	stamp := fmt.Sprint(ts)
+
+	return []byte(stamp), nil
+}
+
+func (t *UnixNano) UnmarshalJSON(b []byte) error {
+	ts, err := strconv.Atoi(string(b))
+	if err != nil {
+		return err
+	}
+
+	t.Time = time.Unix(int64(ts) / int64(time.Microsecond), int64(ts) % int64(time.Microsecond))
+
+	return nil
+}
+
+func (t *UnixNano) ToTime() (time.Time) {
+	return t.Time
+}
 //  ------------------------------------- Операции с абонентами -------------------------------------
 
 //  ------------------------------------- Простая переадресация вызовов -------------------------------------
